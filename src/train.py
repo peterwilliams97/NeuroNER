@@ -11,6 +11,7 @@ import codecs
 import utils_nlp
 #from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
+
 def train_step(sess, dataset, sequence_number, model, transition_params_trained, parameters):
     # Perform one iteration
     token_indices_sequence = dataset.token_indices['train'][sequence_number]
@@ -30,7 +31,9 @@ def train_step(sess, dataset, sequence_number, model, transition_params_trained,
                     feed_dict)
     return transition_params_trained
 
-def prediction_step(sess, dataset, dataset_type, model, transition_params_trained, stats_graph_folder, epoch_number, parameters, dataset_filepaths):
+
+def prediction_step(sess, dataset, dataset_type, model, transition_params_trained,
+                    stats_graph_folder, epoch_number, parameters, dataset_filepaths):
     if dataset_type == 'deploy':
         print('Predict labels for the {0} set'.format(dataset_type))
     else:
@@ -43,11 +46,11 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
 
     for i in range(len(dataset.token_indices[dataset_type])):
         feed_dict = {
-          model.input_token_indices: dataset.token_indices[dataset_type][i],
-          model.input_token_character_indices: dataset.character_indices_padded[dataset_type][i],
-          model.input_token_lengths: dataset.token_lengths[dataset_type][i],
-          model.input_label_indices_vector: dataset.label_vector_indices[dataset_type][i],
-          model.dropout_keep_prob: 1.
+              model.input_token_indices: dataset.token_indices[dataset_type][i],
+              model.input_token_character_indices: dataset.character_indices_padded[dataset_type][i],
+              model.input_token_lengths: dataset.token_lengths[dataset_type][i],
+              model.input_label_indices_vector: dataset.label_vector_indices[dataset_type][i],
+              model.dropout_keep_prob: 1.
         }
         unary_scores, predictions = sess.run([model.unary_scores, model.predictions], feed_dict)
         if parameters['use_crf']:
@@ -74,11 +77,11 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
                     if parameters['tagging_format'] == 'bioes':
                         split_line.pop()
                     gold_label_original = split_line[-1]
-                    assert(token == token_original and gold_label == gold_label_original) 
-                    break            
+                    assert(token == token_original and gold_label == gold_label_original)
+                    break
             split_line.append(prediction)
             output_string += ' '.join(split_line) + '\n'
-        output_file.write(output_string+'\n')
+        output_file.write(output_string + '\n')
 
         all_predictions.extend(predictions)
         all_y_true.extend(dataset.label_indices[dataset_type][i])
@@ -90,7 +93,8 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
         if parameters['main_evaluation_mode'] == 'conll':
             conll_evaluation_script = os.path.join('.', 'conlleval')
             conll_output_filepath = '{0}_conll_evaluation.txt'.format(output_filepath)
-            shell_command = 'perl {0} < {1} > {2}'.format(conll_evaluation_script, output_filepath, conll_output_filepath)
+            shell_command = 'perl {0} < {1} > {2}'.format(conll_evaluation_script, output_filepath,
+                                                          conll_output_filepath)
             os.system(shell_command)
             with open(conll_output_filepath, 'r') as f:
                 classification_report = f.read()
@@ -110,59 +114,60 @@ def predict_labels(sess, model, transition_params_trained, parameters, dataset, 
     for dataset_type in ['train', 'valid', 'test', 'deploy']:
         if dataset_type not in dataset_filepaths.keys():
             continue
-        prediction_output = prediction_step(sess, dataset, dataset_type, model, transition_params_trained, stats_graph_folder, epoch_number, parameters, dataset_filepaths)
+        prediction_output = prediction_step(sess, dataset, dataset_type, model,
+            transition_params_trained, stats_graph_folder, epoch_number, parameters, dataset_filepaths)
         y_pred[dataset_type], y_true[dataset_type], output_filepaths[dataset_type] = prediction_output
     return y_pred, y_true, output_filepaths
 
 
 def restore_model_parameters_from_pretrained_model(parameters, dataset, sess, model, model_saver):
-    pretraining_dataset = pickle.load(open(os.path.join(parameters['pretrained_model_folder'], 'dataset.pickle'), 'rb')) 
+    pretraining_dataset = pickle.load(open(os.path.join(parameters['pretrained_model_folder'], 'dataset.pickle'), 'rb'))
     pretrained_model_checkpoint_filepath = os.path.join(parameters['pretrained_model_folder'], 'model.ckpt')
-    
+
     # Assert that the label sets are the same
     # Test set should have the same label set as the pretrained dataset
     assert pretraining_dataset.index_to_label == dataset.index_to_label
 
     # If the token and character mappings are exactly the same
     if pretraining_dataset.index_to_token == dataset.index_to_token and pretraining_dataset.index_to_character == dataset.index_to_character:
-        
+
         # Restore the pretrained model
         model_saver.restore(sess, pretrained_model_checkpoint_filepath) # Works only when the dimensions of tensor variables are matched.
-    
+
     # If the token and character mappings are different between the pretrained model and the current model
     else:
-        
+
         # Resize the token and character embedding weights to match them with the pretrained model (required in order to restore the pretrained model)
         utils_tf.resize_tensor_variable(sess, model.character_embedding_weights, [pretraining_dataset.alphabet_size, parameters['character_embedding_dimension']])
         utils_tf.resize_tensor_variable(sess, model.token_embedding_weights, [pretraining_dataset.vocabulary_size, parameters['token_embedding_dimension']])
-    
+
         # Restore the pretrained model
         model_saver.restore(sess, pretrained_model_checkpoint_filepath) # Works only when the dimensions of tensor variables are matched.
-        
+
         # Get pretrained embeddings
-        character_embedding_weights, token_embedding_weights = sess.run([model.character_embedding_weights, model.token_embedding_weights]) 
-        
+        character_embedding_weights, token_embedding_weights = sess.run([model.character_embedding_weights, model.token_embedding_weights])
+
         # Restore the sizes of token and character embedding weights
         utils_tf.resize_tensor_variable(sess, model.character_embedding_weights, [dataset.alphabet_size, parameters['character_embedding_dimension']])
-        utils_tf.resize_tensor_variable(sess, model.token_embedding_weights, [dataset.vocabulary_size, parameters['token_embedding_dimension']]) 
-        
+        utils_tf.resize_tensor_variable(sess, model.token_embedding_weights, [dataset.vocabulary_size, parameters['token_embedding_dimension']])
+
         # Re-initialize the token and character embedding weights
         sess.run(tf.variables_initializer([model.character_embedding_weights, model.token_embedding_weights]))
-        
+
         # Load embedding weights from pretrained token embeddings first
-        model.load_pretrained_token_embeddings(sess, dataset, parameters) 
-        
+        model.load_pretrained_token_embeddings(sess, dataset, parameters)
+
         # Load embedding weights from pretrained model
         model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, token_embedding_weights, embedding_type='token')
-        model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, character_embedding_weights, embedding_type='character') 
-        
+        model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, character_embedding_weights, embedding_type='character')
+
         del pretraining_dataset
         del character_embedding_weights
         del token_embedding_weights
-    
+
     # Get transition parameters
     transition_params_trained = sess.run(model.transition_parameters)
-    
+
     if not parameters['reload_character_embeddings']:
         sess.run(tf.variables_initializer([model.character_embedding_weights]))
     if not parameters['reload_character_lstm']:
@@ -176,6 +181,4 @@ def restore_model_parameters_from_pretrained_model(parameters, dataset, sess, mo
     if not parameters['reload_crf']:
         sess.run(tf.variables_initializer(model.crf_variables))
 
-    return transition_params_trained
-
-
+    return transition_params_traine

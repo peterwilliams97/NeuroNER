@@ -44,8 +44,9 @@ warnings.filterwarnings('ignore')
 
 def load_parameters(parameters_filepath, arguments={}, verbose=True):
     '''
-    Load parameters from the ini file if specified, take into account any command line argument, and ensure that each parameter is cast to the correct type.
-    Command line arguments take precedence over parameters specified in the parameter file.
+      Load parameters from the ini file if specified, take into account any command line argument,
+      and ensure that each parameter is cast to the correct type.
+      Command line arguments take precedence over parameters specified in the parameter file.
     '''
     parameters = {'pretrained_model_folder':'../trained_models/conll_2003_en',
                   'dataset_text_folder':'../data/conll2003/en',
@@ -79,7 +80,7 @@ def load_parameters(parameters_filepath, arguments={}, verbose=True):
                   'tagging_format':'bioes',
                   'token_embedding_dimension':100,
                   'token_lstm_hidden_state_dimension':100,
-                  'token_pretrained_embedding_filepath':'../data/word_vectors/glove.6B.100d.txt',
+                  'token_pretrained_embedding_filepath': '~/data/glove.6B/glove.6B.100d.txt',
                   'tokenizer':'spacy',
                   'train_model':True,
                   'use_character_lstm':True,
@@ -105,22 +106,26 @@ def load_parameters(parameters_filepath, arguments={}, verbose=True):
             parameters[k] = v
         # Ensure that each parameter is cast to the correct type
         if k in ['character_embedding_dimension','character_lstm_hidden_state_dimension','token_embedding_dimension',
-                 'token_lstm_hidden_state_dimension','patience','maximum_number_of_epochs','maximum_training_time','number_of_cpu_threads','number_of_gpus']:
+                 'token_lstm_hidden_state_dimension', 'patience','maximum_number_of_epochs', 'maximum_training_time',
+                 'number_of_cpu_threads', 'number_of_gpus']:
             parameters[k] = int(v)
         elif k in ['dropout_rate', 'learning_rate', 'gradient_clipping_value']:
             parameters[k] = float(v)
         elif k in ['remap_unknown_tokens_to_unk', 'use_character_lstm', 'use_crf', 'train_model', 'use_pretrained_model', 'debug', 'verbose',
                  'reload_character_embeddings', 'reload_character_lstm', 'reload_token_embeddings', 'reload_token_lstm', 'reload_feedforward', 'reload_crf',
-                 'check_for_lowercase', 'check_for_digits_replaced_with_zeros', 'freeze_token_embeddings', 'load_only_pretrained_token_embeddings']:
+                 'check_for_lowercase', 'check_for_digits_replaced_with_zeros', 'freeze_token_embeddings',
+                 'load_only_pretrained_token_embeddings']:
             parameters[k] = distutils.util.strtobool(v)
-    # If loading pretrained model, set the model hyperparameters according to the pretraining parameters 
+    # If loading pretrained model, set the model hyperparameters according to the pretraining parameters
     if parameters['use_pretrained_model']:
         pretraining_parameters = load_parameters(parameters_filepath=os.path.join(parameters['pretrained_model_folder'], 'parameters.ini'), verbose=False)[0]
-        for name in ['use_character_lstm', 'character_embedding_dimension', 'character_lstm_hidden_state_dimension', 'token_embedding_dimension', 'token_lstm_hidden_state_dimension', 'use_crf']:
+        for name in ['use_character_lstm', 'character_embedding_dimension', 'character_lstm_hidden_state_dimension',
+                     'token_embedding_dimension', 'token_lstm_hidden_state_dimension', 'use_crf']:
             if parameters[name] != pretraining_parameters[name]:
                 print('WARNING: parameter {0} was overwritten from {1} to {2} to be consistent with the pretrained model'.format(name, parameters[name], pretraining_parameters[name]))
                 parameters[name] = pretraining_parameters[name]
-    if verbose: pprint(parameters)
+    if verbose:
+       pprint(parameters)
     # TODO: update conf_parameters to reflect the overriding
     return parameters, conf_parameters
 
@@ -278,7 +283,7 @@ def main(argv=sys.argv):
             intra_op_parallelism_threads=parameters['number_of_cpu_threads'],
             inter_op_parallelism_threads=parameters['number_of_cpu_threads'],
             device_count={'CPU': 1, 'GPU': parameters['number_of_gpus']},
-            allow_soft_placement=True, # automatically choose an existing and supported device to run the operations in case the specified one doesn't exist
+            allow_soft_placement=True,  # automatically choose an existing and supported device to run the operations in case the specified one doesn't exist
             log_device_placement=False
             )
 
@@ -302,7 +307,7 @@ def main(argv=sys.argv):
             model_name = '{0}_{1}'.format(dataset_name, results['execution_details']['time_stamp'])
 
             utils.create_folder_if_not_exists(parameters['output_folder'])
-            stats_graph_folder=os.path.join(parameters['output_folder'], model_name) # Folder where to save graphs
+            stats_graph_folder=os.path.join(parameters['output_folder'], model_name) # Folder to save graphs
             utils.create_folder_if_not_exists(stats_graph_folder)
             model_folder = os.path.join(stats_graph_folder, 'model')
             utils.create_folder_if_not_exists(model_folder)
@@ -312,7 +317,8 @@ def main(argv=sys.argv):
             utils.create_folder_if_not_exists(tensorboard_log_folder)
             tensorboard_log_folders = {}
             for dataset_type in dataset_filepaths.keys():
-                tensorboard_log_folders[dataset_type] = os.path.join(stats_graph_folder, 'tensorboard_logs', dataset_type)
+                tensorboard_log_folders[dataset_type] = os.path.join(stats_graph_folder,
+                                                                     'tensorboard_logs', dataset_type)
                 utils.create_folder_if_not_exists(tensorboard_log_folders[dataset_type])
             pickle.dump(dataset, open(os.path.join(model_folder, 'dataset.pickle'), 'wb'))
 
@@ -423,7 +429,8 @@ def main(argv=sys.argv):
                         results['execution_details']['early_stop'] = True
                         break
 
-                    if epoch_number >= parameters['maximum_number_of_epochs']: break
+                    if epoch_number >= parameters['maximum_number_of_epochs']:
+                        break
 
 
             except KeyboardInterrupt:

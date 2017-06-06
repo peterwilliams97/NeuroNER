@@ -6,7 +6,9 @@ import time
 import utils_tf
 import utils_nlp
 
-def bidirectional_LSTM(input, hidden_state_dimension, initializer, sequence_length=None, output_sequence=True):
+
+def bidirectional_LSTM(input, hidden_state_dimension, initializer, sequence_length=None,
+                       output_sequence=True):
 
     with tf.variable_scope("bidirectional_LSTM"):
         if sequence_length == None:
@@ -84,7 +86,8 @@ class EntityLSTM(object):
                     shape=[dataset.alphabet_size, parameters['character_embedding_dimension']],
                     initializer=initializer)
                 embedded_characters = tf.nn.embedding_lookup(self.character_embedding_weights, self.input_token_character_indices, name='embedded_characters')
-                if self.verbose: print("embedded_characters: {0}".format(embedded_characters))
+                if self.verbose:
+                    print("embedded_characters: {0}".format(embedded_characters))
                 utils_tf.variable_summaries(self.character_embedding_weights)
 
             # Character LSTM layer
@@ -228,7 +231,7 @@ class EntityLSTM(object):
 
         grads_and_vars = self.optimizer.compute_gradients(self.loss)
         if parameters['gradient_clipping_value']:
-            grads_and_vars = [(tf.clip_by_value(grad, -parameters['gradient_clipping_value'], parameters['gradient_clipping_value']), var) 
+            grads_and_vars = [(tf.clip_by_value(grad, -parameters['gradient_clipping_value'], parameters['gradient_clipping_value']), var)
                               for grad, var in grads_and_vars]
         # By defining a global_step variable and passing it to the optimizer we allow TensorFlow handle the counting of training steps for us.
         # The global step will be automatically incremented by one every time you execute train_op.

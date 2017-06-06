@@ -10,6 +10,24 @@ import os
 import pickle
 
 
+def to_real_path(path):
+    if not path.startswith('~'):
+        assert False, path
+        return path
+    assert len(path) > 2, path
+    home = os.path.expanduser("~")
+    real_path = os.path.join(home, path[2:])
+    print('to_real_path(%s)->%s' % (path, real_path))
+    assert os.path.exists(real_path)
+    return real_path
+
+
+if False:
+    path = '~/data/glove.6B/glove.6B.100d.txt'
+    print(to_real_path(path))
+    assert False
+
+
 class Dataset(object):
     """A class for handling data sets."""
 
@@ -53,7 +71,8 @@ class Dataset(object):
                 for character in token:
                     character_count[character] += 1
 
-                if self.debug and line_count > 200: break# for debugging purposes
+                if self.debug and line_count > 200:
+                    break  # for debugging purposes
 
             if len(new_token_sequence) > 0:
                 labels.append(new_label_sequence)
@@ -63,12 +82,13 @@ class Dataset(object):
 
     def load_dataset(self, dataset_filepaths, parameters):
         '''
-        dataset_filepaths : dictionary with keys 'train', 'valid', 'test', 'deploy'
+            dataset_filepaths : dictionary with keys 'train', 'valid', 'test', 'deploy'
         '''
         start_time = time.time()
         print('Load dataset... ', end='', flush=True)
         all_pretrained_tokens = []
         if parameters['token_pretrained_embedding_filepath'] != '':
+            parameters['token_pretrained_embedding_filepath'] = to_real_path(parameters['token_pretrained_embedding_filepath'])
             all_pretrained_tokens = utils_nlp.load_tokens_from_pretrained_token_embeddings(parameters)
         if self.verbose: print("len(all_pretrained_tokens): {0}".format(len(all_pretrained_tokens)))
 
@@ -76,7 +96,8 @@ class Dataset(object):
         #   and that token embeddings that are learned in the pretrained model are loaded properly.
         all_tokens_in_pretraining_dataset = []
         if parameters['use_pretrained_model']:
-            pretraining_dataset = pickle.load(open(os.path.join(parameters['pretrained_model_folder'], 'dataset.pickle'), 'rb'))
+            pretraining_dataset = pickle.load(open(os.path.join(parameters['pretrained_model_folder'],
+                                              'dataset.pickle'), 'rb'))
             all_tokens_in_pretraining_dataset = pretraining_dataset.index_to_token.values()
 
         remap_to_unk_count_threshold = 1
