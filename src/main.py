@@ -48,51 +48,52 @@ def load_parameters(parameters_filepath, arguments={}, verbose=True):
       and ensure that each parameter is cast to the correct type.
       Command line arguments take precedence over parameters specified in the parameter file.
     '''
-    parameters = {'pretrained_model_folder':'../trained_models/conll_2003_en',
-                  'dataset_text_folder':'../data/conll2003/en',
-                  'character_embedding_dimension':25,
-                  'character_lstm_hidden_state_dimension':25,
-                  'check_for_digits_replaced_with_zeros':True,
-                  'check_for_lowercase':True,
-                  'debug':False,
-                  'dropout_rate':0.5,
-                  'experiment_name':'experiment',
-                  'freeze_token_embeddings':False,
-                  'gradient_clipping_value':5.0,
-                  'learning_rate':0.005,
-                  'load_only_pretrained_token_embeddings':False,
-                  'main_evaluation_mode':'conll',
-                  'maximum_number_of_epochs':100,
-                  'number_of_cpu_threads':8,
-                  'number_of_gpus':0,
-                  'optimizer':'sgd',
-                  'output_folder':'../output',
-                  'patience':10,
-                  'plot_format':'pdf',
-                  'reload_character_embeddings':True,
-                  'reload_character_lstm':True,
-                  'reload_crf':True,
-                  'reload_feedforward':True,
-                  'reload_token_embeddings':True,
-                  'reload_token_lstm':True,
-                  'remap_unknown_tokens_to_unk':True,
-                  'spacylanguage':'en',
-                  'tagging_format':'bioes',
-                  'token_embedding_dimension':100,
-                  'token_lstm_hidden_state_dimension':100,
+    parameters = {'pretrained_model_folder': '../trained_models/conll_2003_en',
+                  'dataset_text_folder': '../data/conll2003/en',
+                  'character_embedding_dimension': 25,
+                  'character_lstm_hidden_state_dimension': 25,
+                  'check_for_digits_replaced_with_zeros': True,
+                  'check_for_lowercase': True,
+                  'debug': False,
+                  'dropout_rate': 0.5,
+                  'experiment_name': 'experiment',
+                  'freeze_token_embeddings': False,
+                  'gradient_clipping_value': 5.0,
+                  'learning_rate': 0.005,
+                  'load_only_pretrained_token_embeddings': False,
+                  'main_evaluation_mode': 'conll',
+                  'maximum_number_of_epochs': 100,
+                  'number_of_cpu_threads': 0,
+                  'number_of_gpus': 0,
+                  'optimizer': 'sgd',
+                  'output_folder': '../output',
+                  'patience': 10,
+                  'plot_format': 'pdf',
+                  'reload_character_embeddings': True,
+                  'reload_character_lstm': True,
+                  'reload_crf': True,
+                  'reload_feedforward': True,
+                  'reload_token_embeddings': True,
+                  'reload_token_lstm': True,
+                  'remap_unknown_tokens_to_unk': True,
+                  'spacylanguage': 'en',
+                  'tagging_format': 'bioes',
+                  'token_embedding_dimension': 100,
+                  'token_lstm_hidden_state_dimension': 100,
                   'token_pretrained_embedding_filepath': '~/data/glove.6B/glove.6B.100d.txt',
-                  'tokenizer':'spacy',
-                  'train_model':True,
-                  'use_character_lstm':True,
-                  'use_crf':True,
-                  'use_pretrained_model':False,
-                  'verbose':False}
+                  'tokenizer': 'spacy',
+                  'train_model': True,
+                  'use_character_lstm': True,
+                  'use_crf': True,
+                  'use_pretrained_model': False,
+                  'verbose': False
+                  }
     # If a parameter file is specified, load it
     if len(parameters_filepath) > 0:
         conf_parameters = configparser.ConfigParser()
         conf_parameters.read(parameters_filepath, encoding="UTF-8")
         nested_parameters = utils.convert_configparser_to_dictionary(conf_parameters)
-        for k,v in nested_parameters.items():
+        for k, v in nested_parameters.items():
             parameters.update(v)
     # Ensure that any arguments the specified in the command line overwrite parameters specified in the parameter file
     for k,v in arguments.items():
@@ -261,6 +262,7 @@ def parse_arguments(arguments=None):
     arguments['argument_default_value'] = argument_default_value
     return arguments
 
+
 def main(argv=sys.argv):
     ''' NeuroNER main method
 
@@ -286,6 +288,7 @@ def main(argv=sys.argv):
             allow_soft_placement=True,  # automatically choose an existing and supported device to run the operations in case the specified one doesn't exist
             log_device_placement=False
             )
+        session_conf.gpu_options.allow_growth = True
 
         sess = tf.Session(config=session_conf)
 
@@ -431,7 +434,6 @@ def main(argv=sys.argv):
 
                     if epoch_number >= parameters['maximum_number_of_epochs']:
                         break
-
 
             except KeyboardInterrupt:
                 results['execution_details']['keyboard_interrupt'] = True
