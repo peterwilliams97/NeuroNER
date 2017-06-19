@@ -96,76 +96,92 @@ def load_parameters(parameters_filepath, arguments={}, verbose=True):
         for k, v in nested_parameters.items():
             parameters.update(v)
     # Ensure that any arguments the specified in the command line overwrite parameters specified in the parameter file
-    for k,v in arguments.items():
+    for k, v in arguments.items():
         if arguments[k] != arguments['argument_default_value']:
             parameters[k] = v
-    for k,v in parameters.items():
+    for k, v in parameters.items():
         v = str(v)
         # If the value is a list delimited with a comma, choose one element at random.
         if ',' in v:
             v = random.choice(v.split(','))
             parameters[k] = v
         # Ensure that each parameter is cast to the correct type
-        if k in ['character_embedding_dimension','character_lstm_hidden_state_dimension','token_embedding_dimension',
-                 'token_lstm_hidden_state_dimension', 'patience','maximum_number_of_epochs', 'maximum_training_time',
-                 'number_of_cpu_threads', 'number_of_gpus']:
+        if k in {'character_embedding_dimension', 'character_lstm_hidden_state_dimension',
+                 'token_embedding_dimension',
+                 'token_lstm_hidden_state_dimension', 'patience', 'maximum_number_of_epochs',
+                 'maximum_training_time',
+                 'number_of_cpu_threads', 'number_of_gpus'}:
             parameters[k] = int(v)
         elif k in ['dropout_rate', 'learning_rate', 'gradient_clipping_value']:
             parameters[k] = float(v)
-        elif k in ['remap_unknown_tokens_to_unk', 'use_character_lstm', 'use_crf', 'train_model', 'use_pretrained_model', 'debug', 'verbose',
-                 'reload_character_embeddings', 'reload_character_lstm', 'reload_token_embeddings', 'reload_token_lstm', 'reload_feedforward', 'reload_crf',
-                 'check_for_lowercase', 'check_for_digits_replaced_with_zeros', 'freeze_token_embeddings',
-                 'load_only_pretrained_token_embeddings']:
+        elif k in {'remap_unknown_tokens_to_unk', 'use_character_lstm', 'use_crf', 'train_model',
+                   'use_pretrained_model', 'debug', 'verbose',
+                   'reload_character_embeddings', 'reload_character_lstm', 'reload_token_embeddings',
+                   'reload_token_lstm', 'reload_feedforward', 'reload_crf',
+                   'check_for_lowercase', 'check_for_digits_replaced_with_zeros', 'freeze_token_embeddings',
+                   'load_only_pretrained_token_embeddings'}:
             parameters[k] = distutils.util.strtobool(v)
     # If loading pretrained model, set the model hyperparameters according to the pretraining parameters
     if parameters['use_pretrained_model']:
-        pretraining_parameters = load_parameters(parameters_filepath=os.path.join(parameters['pretrained_model_folder'], 'parameters.ini'), verbose=False)[0]
+        pretraining_parameters = load_parameters(parameters_filepath=os.path.join(parameters['pretrained_model_folder'],
+                                                 'parameters.ini'), verbose=False)[0]
         for name in ['use_character_lstm', 'character_embedding_dimension', 'character_lstm_hidden_state_dimension',
                      'token_embedding_dimension', 'token_lstm_hidden_state_dimension', 'use_crf']:
             if parameters[name] != pretraining_parameters[name]:
-                print('WARNING: parameter {0} was overwritten from {1} to {2} to be consistent with the pretrained model'.format(name, parameters[name], pretraining_parameters[name]))
+                print('WARNING: parameter {0} was overwritten from {1} to {2} to be consistent with the pretrained '
+                      'model'.format(name, parameters[name], pretraining_parameters[name]))
                 parameters[name] = pretraining_parameters[name]
     if verbose:
-       pprint(parameters)
+        pprint(parameters)
     # TODO: update conf_parameters to reflect the overriding
     return parameters, conf_parameters
+
 
 def get_valid_dataset_filepaths(parameters):
     dataset_filepaths = {}
     dataset_brat_folders = {}
     for dataset_type in ['train', 'valid', 'test', 'deploy']:
-        dataset_filepaths[dataset_type] = os.path.join(parameters['dataset_text_folder'], '{0}.txt'.format(dataset_type))
+        dataset_filepaths[dataset_type] = os.path.join(parameters['dataset_text_folder'],
+                                                       '{0}.txt'.format(dataset_type))
         dataset_brat_folders[dataset_type] = os.path.join(parameters['dataset_text_folder'], dataset_type)
-        dataset_compatible_with_brat_filepath = os.path.join(parameters['dataset_text_folder'], '{0}_compatible_with_brat.txt'.format(dataset_type))
+        dataset_compatible_with_brat_filepath = os.path.join(parameters['dataset_text_folder'],
+                                                             '{0}_compatible_with_brat.txt'.format(dataset_type))
 
         # Conll file exists
         if os.path.isfile(dataset_filepaths[dataset_type]) and os.path.getsize(dataset_filepaths[dataset_type]) > 0:
             # Brat text files exist
-            if os.path.exists(dataset_brat_folders[dataset_type]) and len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0:
+            if (os.path.exists(dataset_brat_folders[dataset_type]) and
+                  len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
 
                 # Check compatibility between conll and brat files
                 brat_to_conll.check_brat_annotation_and_text_compatibility(dataset_brat_folders[dataset_type])
                 if os.path.exists(dataset_compatible_with_brat_filepath):
                     dataset_filepaths[dataset_type] = dataset_compatible_with_brat_filepath
-                conll_to_brat.check_compatibility_between_conll_and_brat_text(dataset_filepaths[dataset_type], dataset_brat_folders[dataset_type])
+                conll_to_brat.check_compatibility_between_conll_and_brat_text(dataset_filepaths[dataset_type],
+                            dataset_brat_folders[dataset_type])
 
             # Brat text files do not exist
             else:
 
                 # Populate brat text and annotation files based on conll file
-                conll_to_brat.conll_to_brat(dataset_filepaths[dataset_type], dataset_compatible_with_brat_filepath, dataset_brat_folders[dataset_type], dataset_brat_folders[dataset_type])
+                conll_to_brat.conll_to_brat(dataset_filepaths[dataset_type], dataset_compatible_with_brat_filepath,
+                    dataset_brat_folders[dataset_type], dataset_brat_folders[dataset_type])
                 dataset_filepaths[dataset_type] = dataset_compatible_with_brat_filepath
 
         # Conll file does not exist
         else:
             # Brat text files exist
-            if os.path.exists(dataset_brat_folders[dataset_type]) and len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0:
-                dataset_filepath_for_tokenizer = os.path.join(parameters['dataset_text_folder'], '{0}_{1}.txt'.format(dataset_type, parameters['tokenizer']))
+            if (os.path.exists(dataset_brat_folders[dataset_type]) and
+                len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
+                dataset_filepath_for_tokenizer = os.path.join(parameters['dataset_text_folder'],
+                    '{0}_{1}.txt'.format(dataset_type, parameters['tokenizer']))
                 if os.path.exists(dataset_filepath_for_tokenizer):
-                    conll_to_brat.check_compatibility_between_conll_and_brat_text(dataset_filepath_for_tokenizer, dataset_brat_folders[dataset_type])
+                    conll_to_brat.check_compatibility_between_conll_and_brat_text(dataset_filepath_for_tokenizer,
+                        dataset_brat_folders[dataset_type])
                 else:
                     # Populate conll file based on brat files
-                    brat_to_conll.brat_to_conll(dataset_brat_folders[dataset_type], dataset_filepath_for_tokenizer, parameters['tokenizer'], parameters['spacylanguage'])
+                    brat_to_conll.brat_to_conll(dataset_brat_folders[dataset_type], dataset_filepath_for_tokenizer,
+                                                parameters['tokenizer'], parameters['spacylanguage'])
                 dataset_filepaths[dataset_type] = dataset_filepath_for_tokenizer
 
             # Brat text files do not exist
@@ -176,37 +192,47 @@ def get_valid_dataset_filepaths(parameters):
 
         if parameters['tagging_format'] == 'bioes':
             # Generate conll file with BIOES format
-            bioes_filepath = os.path.join(parameters['dataset_text_folder'], '{0}_bioes.txt'.format(utils.get_basename_without_extension(dataset_filepaths[dataset_type])))
+            bioes_filepath = os.path.join(parameters['dataset_text_folder'],
+                '{0}_bioes.txt'.format(utils.get_basename_without_extension(dataset_filepaths[dataset_type])))
             utils_nlp.convert_conll_from_bio_to_bioes(dataset_filepaths[dataset_type], bioes_filepath)
             dataset_filepaths[dataset_type] = bioes_filepath
 
     return dataset_filepaths, dataset_brat_folders
 
+
 def check_parameter_compatiblity(parameters, dataset_filepaths):
     # Check mode of operation
     if parameters['train_model']:
         if 'train' not in dataset_filepaths or 'valid' not in dataset_filepaths:
-            raise IOError("If train_model is set to True, both train and valid set must exist in the specified dataset folder: {0}".format(parameters['dataset_text_folder']))
+            raise IOError("If train_model is set to True, both train and valid set must exist in the specified "
+                          "dataset folder: {0}".format(parameters['dataset_text_folder']))
     elif parameters['use_pretrained_model']:
         if 'train' in dataset_filepaths and 'valid' in dataset_filepaths:
-            print("WARNING: train and valid set exist in the specified dataset folder, but train_model is set to FALSE: {0}".format(parameters['dataset_text_folder']))
+            print("WARNING: train and valid set exist in the specified dataset folder, but train_model is set "
+                  "to FALSE: {0}".format(parameters['dataset_text_folder']))
         if 'test' not in dataset_filepaths and 'deploy' not in dataset_filepaths:
-            raise IOError("For prediction mode, either test set and deploy set must exist in the specified dataset folder: {0}".format(parameters['dataset_text_folder']))
-    else: #if not parameters['train_model'] and not parameters['use_pretrained_model']:
+            raise IOError("For prediction mode, either test set and deploy set must exist in the specified dataset "
+                          " folder: {0}".format(parameters['dataset_text_folder']))
+    else:  #  if not parameters['train_model'] and not parameters['use_pretrained_model']:
         raise ValueError('At least one of train_model and use_pretrained_model must be set to True.')
 
     if parameters['use_pretrained_model']:
-        if all([not parameters[s] for s in ['reload_character_embeddings', 'reload_character_lstm', 'reload_token_embeddings', 'reload_token_lstm', 'reload_feedforward', 'reload_crf']]):
-            raise ValueError('If use_pretrained_model is set to True, at least one of reload_character_embeddings, reload_character_lstm, reload_token_embeddings, reload_token_lstm, reload_feedforward, reload_crf must be set to True.')
+        if not any(parameters[s] for s in ['reload_character_embeddings', 'reload_character_lstm',
+                                           'reload_token_embeddings', 'reload_token_lstm', 'reload_feedforward',
+                                           'reload_crf']):
+            raise ValueError('If use_pretrained_model is set to True, at least one of reload_character_embeddings, '
+                             'reload_character_lstm, reload_token_embeddings, reload_token_lstm, reload_feedforward, '
+                             'reload_crf must be set to True.')
 
     if parameters['gradient_clipping_value'] < 0:
         parameters['gradient_clipping_value'] = abs(parameters['gradient_clipping_value'])
 
+
 def parse_arguments(arguments=None):
     ''' Parse the NeuroNER arguments
 
-    arguments:
-        arguments the arguments, optionally given as argument
+      arguments:
+          arguments the arguments, optionally given as argument
     '''
     parser = argparse.ArgumentParser(description='''NeuroNER CLI''', formatter_class=RawTextHelpFormatter)
     parser.add_argument('--parameters_filepath', required=False, default=os.path.join('.','parameters.ini'), help='The parameters file')
@@ -258,7 +284,7 @@ def parse_arguments(arguments=None):
         parser.print_help()
         sys.exit(0)
 
-    arguments = vars(arguments) # http://stackoverflow.com/questions/16878315/what-is-the-right-way-to-treat-python-argparse-namespace-as-a-dictionary
+    arguments = vars(arguments)  # http://stackoverflow.com/questions/16878315/what-is-the-right-way-to-treat-python-argparse-namespace-as-a-dictionary
     arguments['argument_default_value'] = argument_default_value
     return arguments
 
@@ -266,9 +292,9 @@ def parse_arguments(arguments=None):
 def main(argv=sys.argv):
     ''' NeuroNER main method
 
-    Args:
-        parameters_filepath the path to the parameters file
-        output_folder the path to the output folder
+      Args:
+          parameters_filepath the path to the parameters file
+          output_folder the path to the output folder
     '''
     arguments = parse_arguments(argv[1:])
     parameters, conf_parameters = load_parameters(arguments['parameters_filepath'], arguments=arguments)
@@ -285,7 +311,8 @@ def main(argv=sys.argv):
             intra_op_parallelism_threads=parameters['number_of_cpu_threads'],
             inter_op_parallelism_threads=parameters['number_of_cpu_threads'],
             device_count={'CPU': 1, 'GPU': parameters['number_of_gpus']},
-            allow_soft_placement=True,  # automatically choose an existing and supported device to run the operations in case the specified one doesn't exist
+            allow_soft_placement=True,  # automatically choose an existing and supported device to run the operations
+                                        # in case the specified one doesn't exist
             log_device_placement=False
             )
         session_conf.gpu_options.allow_growth = True
@@ -310,7 +337,7 @@ def main(argv=sys.argv):
             model_name = '{0}_{1}'.format(dataset_name, results['execution_details']['time_stamp'])
 
             utils.create_folder_if_not_exists(parameters['output_folder'])
-            stats_graph_folder=os.path.join(parameters['output_folder'], model_name) # Folder to save graphs
+            stats_graph_folder = os.path.join(parameters['output_folder'], model_name)  # Folder to save graphs in
             utils.create_folder_if_not_exists(stats_graph_folder)
             model_folder = os.path.join(stats_graph_folder, 'model')
             utils.create_folder_if_not_exists(model_folder)
@@ -333,7 +360,9 @@ def main(argv=sys.argv):
             writers = {}
             for dataset_type in dataset_filepaths.keys():
                 writers[dataset_type] = tf.summary.FileWriter(tensorboard_log_folders[dataset_type], graph=sess.graph)
-            embedding_writer = tf.summary.FileWriter(model_folder) # embedding_writer has to write in model_folder, otherwise TensorBoard won't be able to view embeddings
+            embedding_writer = tf.summary.FileWriter(model_folder)  # embedding_writer has to write in model_folder,
+                                                                    # otherwise TensorBoard won't be able to view
+                                                                    # embeddings
 
             embeddings_projector_config = projector.ProjectorConfig()
             tensorboard_token_embeddings = embeddings_projector_config.embeddings.add()
@@ -349,12 +378,12 @@ def main(argv=sys.argv):
             projector.visualize_embeddings(embedding_writer, embeddings_projector_config)
 
             # Write metadata for TensorBoard embeddings
-            token_list_file = codecs.open(token_list_file_path,'w', 'UTF-8')
+            token_list_file = codecs.open(token_list_file_path, 'w', 'UTF-8')
             for token_index in range(dataset.vocabulary_size):
                 token_list_file.write('{0}\n'.format(dataset.index_to_token[token_index]))
             token_list_file.close()
 
-            character_list_file = codecs.open(character_list_file_path,'w', 'UTF-8')
+            character_list_file = codecs.open(character_list_file_path, 'w', 'UTF-8')
             for character_index in range(dataset.alphabet_size):
                 if character_index == dataset.PADDING_CHARACTER_INDEX:
                     character_list_file.write('PADDING\n')
@@ -362,46 +391,53 @@ def main(argv=sys.argv):
                     character_list_file.write('{0}\n'.format(dataset.index_to_character[character_index]))
             character_list_file.close()
 
-
             # Initialize the model
             sess.run(tf.global_variables_initializer())
             if not parameters['use_pretrained_model']:
                 model.load_pretrained_token_embeddings(sess, dataset, parameters)
 
             # Start training + evaluation loop. Each iteration corresponds to 1 epoch.
-            bad_counter = 0 # number of epochs with no improvement on the validation test in terms of F1-score
+            bad_counter = 0  # number of epochs with no improvement on the validation test in terms of F1-score
             previous_best_valid_f1_score = 0
-            transition_params_trained = np.random.rand(len(dataset.unique_labels)+2,len(dataset.unique_labels)+2)
-            model_saver = tf.train.Saver(max_to_keep=parameters['maximum_number_of_epochs'])  # defaults to saving all variables
+            transition_params_trained = np.random.rand(len(dataset.unique_labels) + 2,
+                                                       len(dataset.unique_labels) + 2)
+            model_saver = tf.train.Saver(max_to_keep=parameters['maximum_number_of_epochs'])  # defaults to saving all
+                                                                                              # variables
             epoch_number = -1
+            f1_scores = []
             try:
                 while True:
                     step = 0
                     epoch_number += 1
-                    print('\nStarting epoch {0}'.format(epoch_number))
+                    print('\nStarting epoch %d of %s' % (epoch_number, parameters['maximum_number_of_epochs']))
 
                     epoch_start_time = time.time()
 
                     if parameters['use_pretrained_model'] and epoch_number == 0:
-                        # Restore pretrained model parameters
-                        transition_params_trained = train.restore_model_parameters_from_pretrained_model(parameters, dataset, sess, model, model_saver)
+                        # Restore pre-trained model parameters
+                        transition_params_trained = train.restore_model_parameters_from_pretrained_model(parameters,
+                            dataset, sess, model, model_saver)
                     elif epoch_number != 0:
                         # Train model: loop over all sequences of training set with shuffling
-                        sequence_numbers=list(range(len(dataset.token_indices['train'])))
+                        sequence_numbers = list(range(len(dataset.token_indices['train'])))
                         random.shuffle(sequence_numbers)
                         for sequence_number in sequence_numbers:
-                            transition_params_trained = train.train_step(sess, dataset, sequence_number, model, transition_params_trained, parameters)
+                            transition_params_trained = train.train_step(sess, dataset, sequence_number, model,
+                                                                         transition_params_trained, parameters)
                             step += 1
                             if step % 10 == 0:
-                                print('Training {0:.2f}% done'.format(step/len(sequence_numbers)*100), end='\r', flush=True)
+                                print('Training {0:.2f}% done'.format(step / len(sequence_numbers) * 100),
+                                      end='\r', flush=True)
 
                     epoch_elapsed_training_time = time.time() - epoch_start_time
                     print('Training completed in {0:.2f} seconds'.format(epoch_elapsed_training_time), flush=True)
 
-                    y_pred, y_true, output_filepaths = train.predict_labels(sess, model, transition_params_trained, parameters, dataset, epoch_number, stats_graph_folder, dataset_filepaths)
+                    y_pred, y_true, output_filepaths = train.predict_labels(sess, model, transition_params_trained,
+                        parameters, dataset, epoch_number, stats_graph_folder, dataset_filepaths)
 
                     # Evaluate model: save and plot results
-                    evaluate.evaluate_model(results, dataset, y_pred, y_true, stats_graph_folder, epoch_number, epoch_start_time, output_filepaths, parameters)
+                    evaluate.evaluate_model(results, dataset, y_pred, y_true, stats_graph_folder, epoch_number,
+                                            epoch_start_time, output_filepaths, parameters)
 
                     if parameters['use_pretrained_model'] and not parameters['train_model']:
                         conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder)
@@ -416,18 +452,20 @@ def main(argv=sys.argv):
                     writers['train'].flush()
                     utils.copytree(writers['train'].get_logdir(), model_folder)
 
-
                     # Early stop
                     valid_f1_score = results['epoch'][epoch_number][0]['valid']['f1_score']['micro']
-                    if  valid_f1_score > previous_best_valid_f1_score:
-                        bad_counter = 0
+                    f1_scores.append(valid_f1_score)
+                    if valid_f1_score > previous_best_valid_f1_score:
                         previous_best_valid_f1_score = valid_f1_score
-                        conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder, overwrite=True)
-                    else:
-                        bad_counter += 1
-                    print("The last {0} epochs have not shown improvements on the validation set.".format(bad_counter))
+                        conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder,
+                                                  overwrite=True)
+                    _, imax = max(enumerate(valid_f1_score), key=lambda ix: (ix[1], -ix[0]))
+                    no_improvement = len(valid_f1_score) - 1 - imax
+                    # Don't use bad_counter
+                    print("The last %d epochs have not shown improvements on the validation set. patience=%d scores=%s"
+                          % (no_improvement, parameters['patience'], f1_scores[-parameters['patience']:]))
 
-                    if bad_counter >= parameters['patience']:
+                    if no_improvement >= parameters['patience']:
                         print('Early Stop!')
                         results['execution_details']['early_stop'] = True
                         break
@@ -447,10 +485,8 @@ def main(argv=sys.argv):
             for dataset_type in dataset_filepaths.keys():
                 writers[dataset_type].close()
 
-    sess.close() # release the session's resources
+    sess.close()  # release the session's resources
 
 
 if __name__ == "__main__":
     main()
-
-

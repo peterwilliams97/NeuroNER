@@ -28,20 +28,20 @@ class FormatError(Exception):
 
 def argparser():
     import argparse
-    
+
     ap=argparse.ArgumentParser(description='Convert text and standoff ' +
                                'annotations into CoNLL format.')
     ap.add_argument('-a', '--annsuffix', default="ann",
                     help='Standoff annotation file suffix (default "ann")')
     ap.add_argument('-c', '--singleclass', default=None,
                     help='Use given single class for annotations')
-    ap.add_argument('-n', '--nosplit', default=False, action='store_true', 
+    ap.add_argument('-n', '--nosplit', default=False, action='store_true',
                     help='No sentence splitting')
     ap.add_argument('-o', '--outsuffix', default="conll",
                     help='Suffix to add to output files (default "conll")')
-    ap.add_argument('-v', '--verbose', default=False, action='store_true', 
-                    help='Verbose output')    
-    ap.add_argument('text', metavar='TEXT', nargs='+', 
+    ap.add_argument('-v', '--verbose', default=False, action='store_true',
+                    help='Verbose output')
+    ap.add_argument('text', metavar='TEXT', nargs='+',
                     help='Text files ("-" for STDIN)')
     return ap
 
@@ -107,6 +107,7 @@ TOKENIZATION_REGEX = re.compile(r'([0-9a-zA-Z]+|[^0-9a-zA-Z])')
 
 NEWLINE_TERM_REGEX = re.compile(r'(.*?\n)')
 
+
 def text_to_conll(f):
     """Convert plain text into CoNLL format."""
     global options
@@ -143,6 +144,7 @@ def text_to_conll(f):
 
     lines = [[l[0], str(l[1]), str(l[2]), l[3]] if l else l for l in lines]
     return StringIO('\n'.join(('\t'.join(l) for l in lines)))
+
 
 def relabel(lines, annotations):
     global options
@@ -185,12 +187,14 @@ def relabel(lines, annotations):
     if options.singleclass:
         for l in lines:
             if l and l[0] != 'O':
-                l[0] = l[0][:2]+options.singleclass
+                l[0] = l[0][:2] + options.singleclass
 
     return lines
 
+
 def process(f):
     return text_to_conll(f)
+
 
 def process_files(files):
     global options
@@ -277,7 +281,7 @@ def get_annotations(fn):
     global options
 
     annfn = path.splitext(fn)[0]+options.annsuffix
-    
+
     with open(annfn, 'rU') as f:
         textbounds = parse_textbounds(f)
 

@@ -11,10 +11,8 @@ import pickle
 
 
 def to_real_path(path):
-    if not path.startswith('~'):
-        assert False, path
+    if not path.startswith('~/'):
         return path
-    assert len(path) > 2, path
     home = os.path.expanduser("~")
     real_path = os.path.join(home, path[2:])
     print('to_real_path(%s)->%s' % (path, real_path))

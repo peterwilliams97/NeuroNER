@@ -19,12 +19,12 @@ def train_step(sess, dataset, sequence_number, model, transition_params_trained,
         if token_index in dataset.infrequent_token_indices and np.random.uniform() < 0.5:
             token_indices_sequence[i] = dataset.token_to_index[dataset.UNK]
     feed_dict = {
-      model.input_token_indices: token_indices_sequence,
-      model.input_label_indices_vector: dataset.label_vector_indices['train'][sequence_number],
-      model.input_token_character_indices: dataset.character_indices_padded['train'][sequence_number],
-      model.input_token_lengths: dataset.token_lengths['train'][sequence_number],
-      model.input_label_indices_flat: dataset.label_indices['train'][sequence_number],
-      model.dropout_keep_prob: 1-parameters['dropout_rate']
+        model.input_token_indices: token_indices_sequence,
+        model.input_label_indices_vector: dataset.label_vector_indices['train'][sequence_number],
+        model.input_token_character_indices: dataset.character_indices_padded['train'][sequence_number],
+        model.input_token_lengths: dataset.token_lengths['train'][sequence_number],
+        model.input_label_indices_flat: dataset.label_indices['train'][sequence_number],
+        model.dropout_keep_prob: 1 - parameters['dropout_rate']
     }
     _, _, loss, accuracy, transition_params_trained = sess.run(
                     [model.train_op, model.global_step, model.loss, model.accuracy, model.transition_parameters],
@@ -40,17 +40,17 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
         print('Evaluate model on the {0} set'.format(dataset_type))
     all_predictions = []
     all_y_true = []
-    output_filepath = os.path.join(stats_graph_folder, '{1:03d}_{0}.txt'.format(dataset_type,epoch_number))
+    output_filepath = os.path.join(stats_graph_folder, '{1:03d}_{0}.txt'.format(dataset_type, epoch_number))
     output_file = codecs.open(output_filepath, 'w', 'UTF-8')
     original_conll_file = codecs.open(dataset_filepaths[dataset_type], 'r', 'UTF-8')
 
     for i in range(len(dataset.token_indices[dataset_type])):
         feed_dict = {
-              model.input_token_indices: dataset.token_indices[dataset_type][i],
-              model.input_token_character_indices: dataset.character_indices_padded[dataset_type][i],
-              model.input_token_lengths: dataset.token_lengths[dataset_type][i],
-              model.input_label_indices_vector: dataset.label_vector_indices[dataset_type][i],
-              model.dropout_keep_prob: 1.
+            model.input_token_indices: dataset.token_indices[dataset_type][i],
+            model.input_token_character_indices: dataset.character_indices_padded[dataset_type][i],
+            model.input_token_lengths: dataset.token_lengths[dataset_type][i],
+            model.input_label_indices_vector: dataset.label_vector_indices[dataset_type][i],
+            model.dropout_keep_prob: 1.
         }
         unary_scores, predictions = sess.run([model.unary_scores, model.predictions], feed_dict)
         if parameters['use_crf']:
@@ -66,7 +66,8 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
         if parameters['tagging_format'] == 'bioes':
             prediction_labels = utils_nlp.bioes_to_bio(prediction_labels)
             gold_labels = utils_nlp.bioes_to_bio(gold_labels)
-        for prediction, token, gold_label in zip(prediction_labels, dataset.tokens[dataset_type][i], gold_labels):
+        for prediction, token, gold_label in zip(prediction_labels, dataset.tokens[dataset_type][i],
+                                                 gold_labels):
             while True:
                 line = original_conll_file.readline()
                 split_line = line.strip().split(' ')
@@ -100,13 +101,16 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
                 classification_report = f.read()
                 print(classification_report)
         else:
-            new_y_pred, new_y_true, new_label_indices, new_label_names, _, _ = remap_labels(all_predictions, all_y_true, dataset, parameters['main_evaluation_mode'])
-            print(sklearn.metrics.classification_report(new_y_true, new_y_pred, digits=4, labels=new_label_indices, target_names=new_label_names))
+            new_y_pred, new_y_true, new_label_indices, new_label_names, _, _ = remap_labels(
+                all_predictions, all_y_true, dataset, parameters['main_evaluation_mode'])
+            print(sklearn.metrics.classification_report(new_y_true, new_y_pred, digits=4,
+                  labels=new_label_indices, target_names=new_label_names))
 
     return all_predictions, all_y_true, output_filepath
 
 
-def predict_labels(sess, model, transition_params_trained, parameters, dataset, epoch_number, stats_graph_folder, dataset_filepaths):
+def predict_labels(sess, model, transition_params_trained, parameters, dataset, epoch_number,
+                   stats_graph_folder, dataset_filepaths):
     # Predict labels using trained model
     y_pred = {}
     y_true = {}
@@ -115,7 +119,8 @@ def predict_labels(sess, model, transition_params_trained, parameters, dataset, 
         if dataset_type not in dataset_filepaths.keys():
             continue
         prediction_output = prediction_step(sess, dataset, dataset_type, model,
-            transition_params_trained, stats_graph_folder, epoch_number, parameters, dataset_filepaths)
+                                            transition_params_trained, stats_graph_folder,
+                                            epoch_number, parameters, dataset_filepaths)
         y_pred[dataset_type], y_true[dataset_type], output_filepaths[dataset_type] = prediction_output
     return y_pred, y_true, output_filepaths
 
@@ -129,17 +134,20 @@ def restore_model_parameters_from_pretrained_model(parameters, dataset, sess, mo
     assert pretraining_dataset.index_to_label == dataset.index_to_label
 
     # If the token and character mappings are exactly the same
-    if pretraining_dataset.index_to_token == dataset.index_to_token and pretraining_dataset.index_to_character == dataset.index_to_character:
+    if (pretraining_dataset.index_to_token == dataset.index_to_token and
+            pretraining_dataset.index_to_character == dataset.index_to_character):
 
         # Restore the pretrained model
-        model_saver.restore(sess, pretrained_model_checkpoint_filepath) # Works only when the dimensions of tensor variables are matched.
+        model_saver.restore(sess, pretrained_model_checkpoint_filepath)  # Works only when the dimensions of tensor variables are matched.
 
     # If the token and character mappings are different between the pretrained model and the current model
     else:
 
         # Resize the token and character embedding weights to match them with the pretrained model (required in order to restore the pretrained model)
-        utils_tf.resize_tensor_variable(sess, model.character_embedding_weights, [pretraining_dataset.alphabet_size, parameters['character_embedding_dimension']])
-        utils_tf.resize_tensor_variable(sess, model.token_embedding_weights, [pretraining_dataset.vocabulary_size, parameters['token_embedding_dimension']])
+        utils_tf.resize_tensor_variable(sess, model.character_embedding_weights,
+                                        [pretraining_dataset.alphabet_size, parameters['character_embedding_dimension']])
+        utils_tf.resize_tensor_variable(sess, model.token_embedding_weights,
+                                        [pretraining_dataset.vocabulary_size, parameters['token_embedding_dimension']])
 
         # Restore the pretrained model
         model_saver.restore(sess, pretrained_model_checkpoint_filepath) # Works only when the dimensions of tensor variables are matched.
@@ -158,8 +166,10 @@ def restore_model_parameters_from_pretrained_model(parameters, dataset, sess, mo
         model.load_pretrained_token_embeddings(sess, dataset, parameters)
 
         # Load embedding weights from pretrained model
-        model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, token_embedding_weights, embedding_type='token')
-        model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, character_embedding_weights, embedding_type='character')
+        model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, token_embedding_weights,
+                                                    embedding_type='token')
+        model.load_embeddings_from_pretrained_model(sess, dataset, pretraining_dataset, character_embedding_weights,
+                                                    embedding_type='character')
 
         del pretraining_dataset
         del character_embedding_weights
@@ -181,4 +191,4 @@ def restore_model_parameters_from_pretrained_model(parameters, dataset, sess, mo
     if not parameters['reload_crf']:
         sess.run(tf.variables_initializer(model.crf_variables))
 
-    return transition_params_traine
+    return transition_params_trained

@@ -8,6 +8,7 @@ import time
 import datetime
 import shutil
 
+
 def order_dictionary(dictionary, mode, reverse=False):
     '''
     Order a dictionary by 'key' or 'value'.
@@ -15,23 +16,24 @@ def order_dictionary(dictionary, mode, reverse=False):
     http://stackoverflow.com/questions/613183/sort-a-python-dictionary-by-value
     '''
 
-    if mode =='key':
+    if mode == 'key':
         return collections.OrderedDict(sorted(dictionary.items(),
                                               key=operator.itemgetter(0),
                                               reverse=reverse))
-    elif mode =='value':
+    elif mode == 'value':
         return collections.OrderedDict(sorted(dictionary.items(),
                                               key=operator.itemgetter(1),
                                               reverse=reverse))
-    elif mode =='key_value':
+    elif mode == 'key_value':
         return collections.OrderedDict(sorted(dictionary.items(),
                                               reverse=reverse))
-    elif mode =='value_key':
+    elif mode == 'value_key':
         return collections.OrderedDict(sorted(dictionary.items(),
                                               key=lambda x: (x[1], x[0]),
                                               reverse=reverse))
     else:
         raise ValueError("Unknown mode. Should be 'key' or 'value'")
+
 
 def reverse_dictionary(dictionary):
     '''
@@ -45,6 +47,7 @@ def reverse_dictionary(dictionary):
     else:
         return {v: k for k, v in dictionary.items()}
 
+
 def merge_dictionaries(*dict_args):
     '''
     http://stackoverflow.com/questions/38987/how-can-i-merge-two-python-dictionaries-in-a-single-expression
@@ -56,13 +59,15 @@ def merge_dictionaries(*dict_args):
         result.update(dictionary)
     return result
 
+
 def pad_list(old_list, padding_size, padding_value):
     '''
     http://stackoverflow.com/questions/3438756/some-built-in-to-pad-a-list-in-python
     Example: pad_list([6,2,3], 5, 0) returns [6,2,3,0,0]
     '''
     assert padding_size >= len(old_list)
-    return old_list + [padding_value] * (padding_size-len(old_list))
+    return old_list + [padding_value] * (padding_size - len(old_list))
+
 
 def get_basename_without_extension(filepath):
     '''
@@ -71,12 +76,14 @@ def get_basename_without_extension(filepath):
     '''
     return os.path.basename(os.path.splitext(filepath)[0])
 
+
 def create_folder_if_not_exists(directory):
     '''
     Create the folder if it doesn't exist already.
     '''
     if not os.path.exists(directory):
         os.makedirs(directory)
+
 
 def get_current_milliseconds():
     '''
@@ -91,6 +98,7 @@ def get_current_time_in_seconds():
     '''
     return(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
 
+
 def get_current_time_in_miliseconds():
     '''
     http://stackoverflow.com/questions/5998245/get-current-time-in-milliseconds-in-python
@@ -102,7 +110,7 @@ def convert_configparser_to_dictionary(config):
     '''
     http://stackoverflow.com/questions/1773793/convert-configparser-items-to-dictionary
     '''
-    my_config_parser_dict = {s:dict(config.items(s)) for s in config.sections()}
+    my_config_parser_dict = {s: dict(config.items(s)) for s in config.sections()}
     return my_config_parser_dict
 
 

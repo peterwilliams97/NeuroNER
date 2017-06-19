@@ -153,7 +153,7 @@ You are highly encouraged to share a model trained on their own datasets, so tha
 
 By default, the only information about the dataset contained in the pretrained model is the list of tokens that appears in the dataset used for training and the corresponding embeddings learned from the dataset.
 
-If you wish to share a pretrained model without providing any information about the dataset (including the list of tokens appearing in the dataset), you can do so by setting
+If you wish to share a pre-trained model without providing any information about the dataset (including the list of tokens appearing in the dataset), you can do so by setting
 
 ```delete_token_mappings = True```
 

@@ -8,12 +8,12 @@ import utils_nlp
 
 def generate_reference_text_file_for_conll(conll_input_filepath, conll_output_filepath, text_folder):
     '''
-    generates reference text files and adds the corresponding filename and token offsets to conll file.
+        generates reference text files and adds the corresponding filename and token offsets to conll file.
 
-    conll_input_filepath: path to a conll-formatted file without filename and token offsets
-    text_folder: folder to write the reference text file to
+        conll_input_filepath: path to a conll-formatted file without filename and token offsets
+        text_folder: folder to write the reference text file to
     '''
-    dataset_type =  utils.get_basename_without_extension(conll_input_filepath)
+    dataset_type = utils.get_basename_without_extension(conll_input_filepath)
     conll_file = codecs.open(conll_input_filepath, 'r', 'UTF-8')
     utils.create_folder_if_not_exists(text_folder)
     text = ''
@@ -101,6 +101,7 @@ def check_compatibility_between_conll_and_brat_text(conll_filepath, brat_folder)
 
     print("Done.")
 
+
 def output_entities(brat_output_folder, previous_filename, entities, text_filepath, text, overwrite=False):
     if previous_filename == '':
         return
@@ -113,7 +114,7 @@ def output_entities(brat_output_folder, previous_filename, entities, text_filepa
     with codecs.open(output_filepath, 'w', 'utf-8') as output_file:
         for i, entity in enumerate(entities):
             output_file.write('T{0}\t{1} {2} {3}\t{4}\n'.format(i+1, entity['label'], entity['start'], entity['end'],
-                                                           utils_nlp.replace_unicode_whitespaces_with_ascii_whitespace(text[entity['start']:entity['end']])))
+                              utils_nlp.replace_unicode_whitespaces_with_ascii_whitespace(text[entity['start']:entity['end']])))
     # Copy the corresponding text file
     if text_filepath != os.path.join(brat_output_folder, os.path.basename(text_filepath)):
         shutil.copy(text_filepath, brat_output_folder)
@@ -183,7 +184,8 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
         if label == 'O':
             # Previous entity ended
             if previous_token_label != 'O':
-                if verbose: print("entity: {0}".format(entity))
+                if verbose:
+                    print("entity: {0}".format(entity))
                 entities.append(entity)
                 entity_id += 1
                 entity = {}
@@ -204,7 +206,8 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
         if label[:2] == 'B-':
             if previous_token_label != 'O':
                 # End the previous entity
-                if verbose: print("entity: {0}".format(entity))
+                if verbose:
+                    print("entity: {0}".format(entity))
                 entities.append(entity)
                 entity_id += 1
             # Start a new entity
@@ -217,9 +220,10 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
                     # Update entity
                     entity['text'] = entity['text'] + ' ' + token['text']
                     entity['end'] = token['end']
-                else: # newline between the entity and the token
+                else:  # newline between the entity and the token
                     # End the previous entity
-                    if verbose: print("entity: {0}".format(entity))
+                    if verbose:
+                        print("entity: {0}".format(entity))
                     entities.append(entity)
                     entity_id += 1
                     # Start a new entity
@@ -227,12 +231,13 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
             elif previous_token_label != 'O':
                 # TODO: count BI or II incompatibility
                 # End the previous entity
-                if verbose: print("entity: {0}".format(entity))
+                if verbose:
+                    print("entity: {0}".format(entity))
                 entities.append(entity)
                 entity_id += 1
                 # Start new entity
                 entity = token
-            else: # previous_token_label == 'O'
+            else:  # previous_token_label == 'O'
                 # TODO: count  OI incompatibility
                 # Start new entity
                 entity = token
@@ -241,6 +246,7 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
     conll_file.close()
     print('Done.')
 
+
 def output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder, overwrite=False):
     # Output brat files
     for dataset_type in ['train', 'valid', 'test', 'deploy']:
@@ -248,4 +254,5 @@ def output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder, over
             continue
         brat_output_folder = os.path.join(stats_graph_folder, 'brat', dataset_type)
         utils.create_folder_if_not_exists(brat_output_folder)
-        conll_to_brat(output_filepaths[dataset_type], output_filepaths[dataset_type], dataset_brat_folders[dataset_type], brat_output_folder, overwrite=overwrite)
+        conll_to_brat(output_filepaths[dataset_type], output_filepaths[dataset_type],
+                      dataset_brat_folders[dataset_type], brat_output_folder, overwrite=overwrite)

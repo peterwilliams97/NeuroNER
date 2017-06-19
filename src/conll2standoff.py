@@ -19,7 +19,7 @@ except:
     pass
 
 # what to do if an error in the tag sequence (e.g. "O I-T1" or "B-T1
-# I-T2") is encountered: recover/discard the erroneously tagged 
+# I-T2") is encountered: recover/discard the erroneously tagged
 # sequence, or abord the entire process
 # TODO: add a command-line option for this
 SEQUENCE_ERROR_RECOVER, SEQUENCE_ERROR_DISCARD, SEQUENCE_ERROR_FAIL = range(3)
@@ -32,6 +32,7 @@ SEQUENCE_ERROR_PROCESSING = SEQUENCE_ERROR_RECOVER
 out = sys.stdout
 reference_directory = None
 output_directory = None
+
 
 def reference_text_filename(fn):
     # Tries to determine the name of the reference text file
@@ -47,12 +48,13 @@ def reference_text_filename(fn):
 
     return reffn
 
+
 def output_filename(fn):
     if output_directory is None:
         return None
 
     reffn = reference_text_filename(fn)
-    return os.path.join(output_directory, os.path.basename(reffn).replace(".txt",".a1"))
+    return os.path.join(output_directory, os.path.basename(reffn).replace(".txt", ".a1"))
 
 parser = ET.XMLParser(strip_cdata=False)
 def process(fn):
@@ -110,7 +112,7 @@ def process(fn):
             taggedTokens = []
             currentFilename = filename
 #             reffn = reference_text_filename(filename)
-        
+
 #             try:
 #                 filepaths = glob.glob(os.path.join(xml_output_folder, '*.xml'))
 #                 for filepath in filepaths:
@@ -134,7 +136,7 @@ def process(fn):
 #                 raise
 #             reftext = reffile.read()
 #             reffile.close()
-        
+
         # parse tag
         m = re.match(r'^([BIO])((?:-[A-Za-z_]+)?)$', tag)
         assert m, "ERROR: failed to parse tag '%s' in %s" % (tag, fn)
@@ -166,6 +168,7 @@ def process(fn):
     # inline-format BIO conversion script).
     output_entities(out, taggedTokens, reftext, fn)
 
+
 def output_entities(out, taggedTokens, reftext, fn):
     ### Output for entities ###
 
@@ -196,12 +199,12 @@ def output_entities(out, taggedTokens, reftext, fn):
                 ttag = "O"
             else:
                 assert SEQUENCE_ERROR_PROCESSING == SEQUENCE_ERROR_FAIL
-                pass # will fail on later check
+                pass  # will fail on later check
 
         # similarly if an "I" tag occurs after an "O" tag
         if prevTag == "O" and ttag == "I":
             if SEQUENCE_ERROR_PROCESSING == SEQUENCE_ERROR_RECOVER:
-                ttag = "B"            
+                ttag = "B"
             elif SEQUENCE_ERROR_PROCESSING == SEQUENCE_ERROR_DISCARD:
                 ttag = "O"
             else:
@@ -211,7 +214,7 @@ def output_entities(out, taggedTokens, reftext, fn):
         if prevTag != "O" and ttag != "I":
             # previous entity does not continue into this tag; output
             assert currType is not None and currStart is not None, "ERROR at %s (%d-%d) in %s" % (reftext[startoff:endoff], startoff, endoff, fn)
-            
+
             print(entityStr(currStart, prevEnd, currType, idIdx, reftext).encode("UTF-8"))
             print >> out, entityStr(currStart, prevEnd, currType, idIdx, reftext).encode("UTF-8")
 
@@ -224,11 +227,11 @@ def output_entities(out, taggedTokens, reftext, fn):
             # previous entity continues ; just check sanity
             assert ttag == "I", "ERROR in %s" % fn
             assert currType == ttype, "ERROR: entity of type '%s' continues as type '%s' in %s" % (currType, ttype, fn)
-            
+
         if ttag == "B":
             # new entity starts
             currType, currStart = ttype, startoff
-            
+
         prevTag, prevEnd = ttag, endoff
 
     # if there's an open entity after all tokens have been processed,
@@ -246,7 +249,8 @@ def get_dataset_folder_original(model='crf'):
         return os.path.join('..', '..', 'data', 'datasets', 'original')
     elif model == 'crf':
         return os.path.join('..', '..', 'ner-deid', 'data', 'datasets', 'original')
-        
+
+
 def get_original_dataset_folders(dataset_base_filename, split='60_40', model='crf'):
     folder = {'train':[], 'dev':[], 'test':[]}
     dataset_folder_original = get_dataset_folder_original(model=model)
@@ -258,11 +262,12 @@ def get_original_dataset_folders(dataset_base_filename, split='60_40', model='cr
     folder['dev'] = os.path.join(dataset_folder_original, dataset_base_filename, split, 'training-PHI-Gold-Set2')
 #     filepaths['dev'] = sorted(glob.glob(os.path.join(train_folder, '*.xml')))
     folder['test'] = os.path.join(dataset_folder_original, dataset_base_filename, split, 'testing-PHI-Gold-fixed')
-#     filepaths['test'] = sorted(sorted(glob.glob(os.path.join(test_folder, '*.xml')))) 
+#     filepaths['test'] = sorted(sorted(glob.glob(os.path.join(test_folder, '*.xml'))))
     return folder
 
+
 def get_original_dataset_filepaths(dataset_base_filename, split='60_40', model='crf'):
-    filepaths = {'train':[], 'dev':[], 'test':[]}
+    filepaths = {'train': [], 'dev': [], 'test': []}
     dataset_folder_original = get_dataset_folder_original(model=model)
 #     print("dataset_folder_original: {0}".format(dataset_folder_original))
 #     print("split: {0}".format(split))
@@ -272,7 +277,7 @@ def get_original_dataset_filepaths(dataset_base_filename, split='60_40', model='
     train_folder = os.path.join(dataset_folder_original, dataset_base_filename, split, 'training-PHI-Gold-Set2')
     filepaths['dev'] = sorted(glob.glob(os.path.join(train_folder, '*.xml')))
     test_folder = os.path.join(dataset_folder_original, dataset_base_filename, split, 'testing-PHI-Gold-fixed')
-    filepaths['test'] = sorted(sorted(glob.glob(os.path.join(test_folder, '*.xml')))) 
+    filepaths['test'] = sorted(sorted(glob.glob(os.path.join(test_folder, '*.xml'))))
     return filepaths
 
 
@@ -320,7 +325,7 @@ def main(argv):
 #         except Exception, e:
 #             print >> sys.stderr, "Error processing %s: %s" % (fn, e)
 #             fail_count += 1
-# 
+#
 #             # if we're storing output on disk, remove the output file
 #             # to avoid having partially-written data
 #             ofn = output_filename(fn)
@@ -340,6 +345,7 @@ def main(argv):
 """ % (fail_count, len(filenames))
 
     return 0
+
 
 if __name__ == "__main__":
     source = '/Users/jjylee/Documents/workspace/nlp/ner-deid/src/ann/data/i2b2deid2014/stanford/60_40'

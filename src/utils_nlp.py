@@ -7,6 +7,7 @@ import utils
 import os
 import numpy as np
 
+
 def load_tokens_from_pretrained_token_embeddings(parameters):
     file_input = codecs.open(parameters['token_pretrained_embedding_filepath'], 'r', 'UTF-8')
     count = -1
@@ -16,8 +17,9 @@ def load_tokens_from_pretrained_token_embeddings(parameters):
         count += 1
         cur_line = cur_line.strip()
         cur_line = cur_line.split(' ')
-        if len(cur_line)==0:continue
-        token=cur_line[0]
+        if len(cur_line) == 0:
+            continue
+        token = cur_line[0]
         tokens.add(token)
         number_of_loaded_word_vectors += 1
     file_input.close()
@@ -54,8 +56,8 @@ def get_parsed_conll_output(conll_output_filepath):
     line = conll_output[1].split()
     parsed_output['all'] = {'accuracy': float(line[1]),
                             'precision': float(line[3]),
-                            'recall':float(line[5]),
-                            'f1':float(line[7])}
+                            'recall': float(line[5]),
+                            'f1': float(line[7])}
     total_support = 0
     for line in conll_output[2:]:
         line = line.split()
@@ -63,11 +65,12 @@ def get_parsed_conll_output(conll_output_filepath):
         support = int(line[7])
         total_support += support
         parsed_output[phi_type] = {'precision': float(line[2]),
-                            'recall':float(line[4]),
-                            'f1':float(line[6]),
-                            'support':support}
+                                   'recall': float(line[4]),
+                                   'f1': float(line[6]),
+                                   'support': support}
     parsed_output['all']['support'] = total_support
     return parsed_output
+
 
 def remove_bio_from_label_name(label_name):
     if label_name[:2] in ['B-', 'I-', 'E-', 'S-']:
@@ -76,6 +79,7 @@ def remove_bio_from_label_name(label_name):
         assert(label_name == 'O')
         new_label_name = label_name
     return new_label_name
+
 
 def replace_unicode_whitespaces_with_ascii_whitespace(string):
     return ' '.join(string.split())
@@ -89,8 +93,9 @@ def end_current_entity(previous_label_without_bio, current_entity_length, new_la
         return
     if current_entity_length == 1:
         new_labels[i - 1] = 'S-' + previous_label_without_bio
-    else: #elif current_entity_length > 1
-        new_labels[i - 1] = 'E-' + previous_label_without_bio 
+    else:  #e lif current_entity_length > 1
+        new_labels[i - 1] = 'E-' + previous_label_without_bio
+
 
 def bio_to_bioes(labels):
     previous_label_without_bio = 'O'
@@ -108,9 +113,10 @@ def bio_to_bioes(labels):
             if current_entity_length == 0:
                 new_labels[i] = 'B-' + label_without_bio
             current_entity_length += 1
-        previous_label_without_bio = label_without_bio    
+        previous_label_without_bio = label_without_bio
     end_current_entity(previous_label_without_bio, current_entity_length, new_labels, i + 1)
     return new_labels
+
 
 def bioes_to_bio(labels):
     previous_label_without_bio = 'O'
@@ -126,7 +132,7 @@ def bioes_to_bio(labels):
             new_labels[i] = 'B-' + label_without_bio
         previous_label_without_bio = label_without_bio
     return new_labels
-                
+
 
 def check_bio_bioes_compatibility(labels_bio, labels_bioes):
     if labels_bioes == []:
@@ -135,10 +141,11 @@ def check_bio_bioes_compatibility(labels_bio, labels_bioes):
     flag = True
     if new_labels_bio != labels_bio:
         print("Not valid.")
-        flag = False 
+        flag = False
     del labels_bio[:]
     del labels_bioes[:]
     return flag
+
 
 def check_validity_of_conll_bioes(bioes_filepath):
     dataset_type = utils.get_basename_without_extension(bioes_filepath).split('_')[0]
@@ -154,8 +161,8 @@ def check_validity_of_conll_bioes(bioes_filepath):
             if check_bio_bioes_compatibility(labels_bio, labels_bioes):
                 continue
             return False
-        label_bioes = split_line[-1]    
-        label_bio = split_line[-2]    
+        label_bioes = split_line[-1]
+        label_bio = split_line[-2]
         labels_bioes.append(label_bioes)
         labels_bio.append(label_bio)
     input_conll_file.close()
@@ -163,10 +170,11 @@ def check_validity_of_conll_bioes(bioes_filepath):
         print("Done.")
         return True
     return False
-             
+
+
 def output_conll_lines_with_bioes(split_lines, labels, output_conll_file):
     '''
-    Helper function for convert_conll_from_bio_to_bioes
+        Helper function for convert_conll_from_bio_to_bioes
     '''
     if labels == []:
         return
@@ -196,12 +204,11 @@ def convert_conll_from_bio_to_bioes(input_conll_filepath, output_conll_filepath)
             output_conll_lines_with_bioes(split_lines, labels, output_conll_file)
             output_conll_file.write(line)
             continue
-        label = split_line[-1]    
+        label = split_line[-1]
         labels.append(label)
         split_lines.append(split_line)
     output_conll_lines_with_bioes(split_lines, labels, output_conll_file)
-    
+
     input_conll_file.close()
     output_conll_file.close()
     print("Done.")
-    

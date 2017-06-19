@@ -7,6 +7,7 @@ import os
 import main
 from shutil import rmtree
 
+
 class TestMain(unittest.TestCase):
 
     testFolder = os.path.join(os.path.dirname(__file__), "test")
@@ -42,6 +43,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(run_outputdir, 'model', 'projector_config.pbtxt')))
         self.assertTrue(os.path.isfile(os.path.join(run_outputdir, 'model', 'tensorboard_metadata_characters.tsv')))
         self.assertTrue(os.path.isfile(os.path.join(run_outputdir, 'model', 'tensorboard_metadata_tokens.tsv')))
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -9,7 +9,8 @@ import glob
 import codecs
 import shutil
 
-sys.path.append(os.path.join('..','..','src'))
+
+sys.path.append(os.path.join('..', '..', 'src'))
 from conll_to_brat import output_entities
 import utils
 

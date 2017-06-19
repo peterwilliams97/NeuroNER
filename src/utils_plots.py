@@ -5,26 +5,30 @@ from __future__ import print_function
 from __future__ import division
 import numpy as np
 import matplotlib
-matplotlib.use('Agg') # http://stackoverflow.com/questions/2801882/generating-a-png-with-matplotlib-when-display-is-undefined
+matplotlib.use('Agg')  # http://stackoverflow.com/questions/2801882/generating-a-png-with-matplotlib-when-display-is-undefined
 import matplotlib.pyplot as plt
 import sklearn.preprocessing
 from matplotlib import cm
 
+
 def get_cmap():
     '''
-    http://stackoverflow.com/questions/37517587/how-can-i-change-the-intensity-of-a-colormap-in-matplotlib
+        http://stackoverflow.com/questions/37517587/how-can-i-change-the-intensity-of-a-colormap-in-matplotlib
     '''
-    cmap = cm.get_cmap('RdBu', 256) # set how many colors you want in color map
+    cmap = cm.get_cmap('RdBu', 256)  # set how many colors you want in color map
     # modify colormap
     alpha = 1.0
     colors = []
     for ind in range(cmap.N):
         c = []
-        if ind<128 or ind> 210: continue
-        for x in cmap(ind)[:3]: c.append(min(1,x*alpha))
+        if ind < 128 or ind > 210:
+            continue
+        for x in cmap(ind)[:3]:
+            c.append(min(1,  x * alpha))
         colors.append(tuple(c))
-    my_cmap = matplotlib.colors.ListedColormap(colors, name = 'my_name')
+    my_cmap = matplotlib.colors.ListedColormap(colors, name='my_name')
     return my_cmap
+
 
 def show_values(pc, fmt="%.2f", **kw):
     '''
@@ -42,6 +46,7 @@ def show_values(pc, fmt="%.2f", **kw):
             color = (1.0, 1.0, 1.0)
         ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
 
+
 def cm2inch(*tupl):
     '''
     Specify figure size in centimeter in matplotlib
@@ -50,19 +55,22 @@ def cm2inch(*tupl):
     '''
     inch = 2.54
     if type(tupl[0]) == tuple:
-        return tuple(i/inch for i in tupl[0])
+        return tuple(i / inch for i in tupl[0])
     else:
-        return tuple(i/inch for i in tupl)
+        return tuple(i / inch for i in tupl)
 
-def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40, figure_height=20, correct_orientation=False, cmap='RdBu', fmt="%.2f", graph_filepath='', normalize=False, remove_diagonal=False):
+
+def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40, figure_height=20,
+    correct_orientation=False, cmap='RdBu', fmt="%.2f", graph_filepath='', normalize=False,
+    remove_diagonal=False):
     '''
-    Inspired by:
-    - http://stackoverflow.com/a/16124677/395857
-    - http://stackoverflow.com/a/25074150/395857
+        Inspired by:
+        - http://stackoverflow.com/a/16124677/395857
+        - http://stackoverflow.com/a/25074150/395857
     '''
     if normalize:
         AUC = sklearn.preprocessing.normalize(AUC, norm='l1', axis=1)
-        
+
     if remove_diagonal:
         matrix = np.copy(AUC)
         np.fill_diagonal(matrix, 0)
@@ -94,7 +102,7 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     plt.ylabel(ylabel)
 
     # Remove last blank column
-    plt.xlim( (0, AUC.shape[1]) )
+    plt.xlim((0, AUC.shape[1]) )
 
     # Turn off all the ticks
     ax = plt.gca()
@@ -125,10 +133,11 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
         plt.close()
 
 
-def plot_classification_report(classification_report, title='Classification report ', cmap='RdBu', from_conll_json=False):
+def plot_classification_report(classification_report, title='Classification report ', cmap='RdBu',
+                               from_conll_json=False):
     '''
-    Plot scikit-learn classification report.
-    Extension based on http://stackoverflow.com/a/31689645/395857
+        Plot scikit-learn classification report.
+        Extension based on http://stackoverflow.com/a/31689645/395857
     '''
     classes = []
     plotMat = []
@@ -139,7 +148,7 @@ def plot_classification_report(classification_report, title='Classification repo
             support.append(classification_report[label]["support"])
             classes.append('micro-avg' if label=='all' else label)
             class_names.append('micro-avg' if label=='all' else label)
-            plotMat.append([float(classification_report[label][x]) for x in ["precision", "recall", "f1"]]) 
+            plotMat.append([float(classification_report[label][x]) for x in ["precision", "recall", "f1"]])
     else:
         lines = classification_report.split('\n')
         for line in lines[2 : (len(lines) - 1)]:
@@ -150,7 +159,7 @@ def plot_classification_report(classification_report, title='Classification repo
             support.append(int(t[-1]))
             class_names.append(t[0])
             plotMat.append(v)
-    
+
     xlabel = 'Metrics'
     ylabel = 'Classes'
     xticklabels = ['Precision', 'Recall', 'F1-score']
@@ -159,7 +168,8 @@ def plot_classification_report(classification_report, title='Classification repo
     figure_height = len(class_names) + 7
     correct_orientation = True
 
-    heatmap(np.array(plotMat), title, xlabel, ylabel, xticklabels, yticklabels, figure_width, figure_height, correct_orientation, cmap=cmap)
+    heatmap(np.array(plotMat), title, xlabel, ylabel, xticklabels, yticklabels, figure_width, figure_height,
+            correct_orientation, cmap=cmap)
 
 
 def plot_hist(sequence, xlabel, ylabel, title, graph_path):
@@ -232,5 +242,3 @@ def plot_threshold_vs_accuracy_curve(accuracies, thresholds, graph_path, title):
     plt.legend(loc="lower left")
     plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight') # use format='svg' or 'pdf' for vectorial pictures
     plt.close()
-
-
