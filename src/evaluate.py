@@ -284,6 +284,7 @@ def evaluate_model(results, dataset, y_pred_all, y_true_all, stats_graph_folder,
                         dataset_type, evaluation_mode, parameters['plot_format'])),
                         dpi=300, format=parameters['plot_format'], bbox_inches='tight')
             plt.close()
+        sys.stdout.flush()
 
     if parameters['train_model'] and 'train' in output_filepaths.keys() and 'valid' in output_filepaths.keys():
         plot_f1_vs_epoch(results, stats_graph_folder, 'f1_score', parameters)

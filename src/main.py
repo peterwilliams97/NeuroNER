@@ -6,40 +6,21 @@ CUDA_VISIBLE_DEVICES=2 python3.5 main.py &
 CUDA_VISIBLE_DEVICES=3 python3.5 main.py &
 '''
 from __future__ import print_function
-import tensorflow as tf
 import os
-import utils
-import numpy as np
-import matplotlib
-import copy
-import distutils.util
-import pickle
-import glob
-import brat_to_conll
-import conll_to_brat
-import codecs
-from pprint import pprint
-from tensorflow.contrib.tensorboard.plugins import projector
 import argparse
 from argparse import RawTextHelpFormatter
 import sys
-import time
-import random
-import utils_nlp
-import dataset as ds
-import evaluate
-import configparser
-import train
-from entity_lstm import EntityLSTM
-
+from neuroner import NeuroNER
+import tensorflow as tf
+import warnings
 matplotlib.use('Agg')
+import matplotlib
 
 # http://stackoverflow.com/questions/42217532/tensorflow-version-1-0-0-rc2-on-windows-opkernel-op-bestsplits-device-typ
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 print('NeuroNER version: {0}'.format('1.0-dev'))
 print('TensorFlow version: {0}'.format(tf.__version__))
 
-import warnings
 warnings.filterwarnings('ignore')
 
 
@@ -255,6 +236,7 @@ def parse_arguments(arguments=None):
     parser.add_argument('--gradient_clipping_value', required=False, default=argument_default_value, help='')
     parser.add_argument('--learning_rate', required=False, default=argument_default_value, help='')
     parser.add_argument('--load_only_pretrained_token_embeddings', required=False, default=argument_default_value, help='')
+    parser.add_argument('--load_all_pretrained_token_embeddings', required=False, default=argument_default_value, help='')
     parser.add_argument('--main_evaluation_mode', required=False, default=argument_default_value, help='')
     parser.add_argument('--maximum_number_of_epochs', required=False, default=argument_default_value, help='')
     parser.add_argument('--number_of_cpu_threads', required=False, default=argument_default_value, help='')
@@ -296,201 +278,15 @@ def parse_arguments(arguments=None):
 
 def main(argv=sys.argv):
     """ NeuroNER main method
-
-      Args:
-          parameters_filepath the path to the parameters file
-          output_folder the path to the output folder
+    Args:
+        parameters_filepath the path to the parameters file
+        output_folder the path to the output folder
     """
     arguments = parse_arguments(argv[1:])
-    parameters, conf_parameters = load_parameters(arguments['parameters_filepath'], arguments=arguments)
-    dataset_filepaths, dataset_brat_folders = get_valid_dataset_filepaths(parameters)
-    check_parameter_compatiblity(parameters, dataset_filepaths)
 
-    # Load dataset
-    dataset = ds.Dataset(verbose=parameters['verbose'], debug=parameters['debug'])
-    dataset.load_dataset(dataset_filepaths, parameters)
-
-    # Create graph and session
-    with tf.Graph().as_default():
-        session_conf = tf.ConfigProto(
-            intra_op_parallelism_threads=parameters['number_of_cpu_threads'],
-            inter_op_parallelism_threads=parameters['number_of_cpu_threads'],
-            device_count={'CPU': 1, 'GPU': parameters['number_of_gpus']},
-            allow_soft_placement=True,  # automatically choose an existing and supported device to run the operations
-                                        # in case the specified one doesn't exist
-            log_device_placement=False
-            )
-        session_conf.gpu_options.allow_growth = True
-
-        sess = tf.Session(config=session_conf)
-
-        with sess.as_default():
-            # Initialize and save execution details
-            start_time = time.time()
-            experiment_timestamp = utils.get_current_time_in_miliseconds()
-            results = {}
-            results['epoch'] = {}
-            results['execution_details'] = {}
-            results['execution_details']['train_start'] = start_time
-            results['execution_details']['time_stamp'] = experiment_timestamp
-            results['execution_details']['early_stop'] = False
-            results['execution_details']['keyboard_interrupt'] = False
-            results['execution_details']['num_epochs'] = 0
-            results['model_options'] = copy.copy(parameters)
-
-            dataset_name = utils.get_basename_without_extension(parameters['dataset_text_folder'])
-            model_name = '{0}_{1}'.format(dataset_name, results['execution_details']['time_stamp'])
-
-            utils.create_folder_if_not_exists(parameters['output_folder'])
-            stats_graph_folder = os.path.join(parameters['output_folder'], model_name)  # Folder to save graphs in
-            utils.create_folder_if_not_exists(stats_graph_folder)
-            model_folder = os.path.join(stats_graph_folder, 'model')
-            utils.create_folder_if_not_exists(model_folder)
-            with open(os.path.join(model_folder, 'parameters.ini'), 'w') as parameters_file:
-                conf_parameters.write(parameters_file)
-            tensorboard_log_folder = os.path.join(stats_graph_folder, 'tensorboard_logs')
-            utils.create_folder_if_not_exists(tensorboard_log_folder)
-            tensorboard_log_folders = {}
-            for dataset_type in dataset_filepaths.keys():
-                tensorboard_log_folders[dataset_type] = os.path.join(stats_graph_folder,
-                                                                     'tensorboard_logs', dataset_type)
-                utils.create_folder_if_not_exists(tensorboard_log_folders[dataset_type])
-            pickle.dump(dataset, open(os.path.join(model_folder, 'dataset.pickle'), 'wb'))
-
-            # Instantiate the model
-            # graph initialization should be before FileWriter, otherwise the graph will not appear in TensorBoard
-            model = EntityLSTM(dataset, parameters)
-
-            # Instantiate the writers for TensorBoard
-            writers = {}
-            for dataset_type in dataset_filepaths.keys():
-                writers[dataset_type] = tf.summary.FileWriter(tensorboard_log_folders[dataset_type], graph=sess.graph)
-            embedding_writer = tf.summary.FileWriter(model_folder)  # embedding_writer has to write in model_folder,
-                                                                    # otherwise TensorBoard won't be able to view
-                                                                    # embeddings
-
-            embeddings_projector_config = projector.ProjectorConfig()
-            tensorboard_token_embeddings = embeddings_projector_config.embeddings.add()
-            tensorboard_token_embeddings.tensor_name = model.token_embedding_weights.name
-            token_list_file_path = os.path.join(model_folder, 'tensorboard_metadata_tokens.tsv')
-            tensorboard_token_embeddings.metadata_path = os.path.relpath(token_list_file_path, '..')
-
-            tensorboard_character_embeddings = embeddings_projector_config.embeddings.add()
-            tensorboard_character_embeddings.tensor_name = model.character_embedding_weights.name
-            character_list_file_path = os.path.join(model_folder, 'tensorboard_metadata_characters.tsv')
-            tensorboard_character_embeddings.metadata_path = os.path.relpath(character_list_file_path, '..')
-
-            projector.visualize_embeddings(embedding_writer, embeddings_projector_config)
-
-            # Write metadata for TensorBoard embeddings
-            token_list_file = codecs.open(token_list_file_path, 'w', 'UTF-8')
-            for token_index in range(dataset.vocabulary_size):
-                token_list_file.write('{0}\n'.format(dataset.index_to_token[token_index]))
-            token_list_file.close()
-
-            character_list_file = codecs.open(character_list_file_path, 'w', 'UTF-8')
-            for character_index in range(dataset.alphabet_size):
-                if character_index == dataset.PADDING_CHARACTER_INDEX:
-                    character_list_file.write('PADDING\n')
-                else:
-                    character_list_file.write('{0}\n'.format(dataset.index_to_character[character_index]))
-            character_list_file.close()
-
-            # Initialize the model
-            sess.run(tf.global_variables_initializer())
-            if not parameters['use_pretrained_model']:
-                model.load_pretrained_token_embeddings(sess, dataset, parameters)
-
-            # Start training + evaluation loop. Each iteration corresponds to 1 epoch.
-            previous_best_valid_f1_score = 0
-            transition_params_trained = np.random.rand(len(dataset.unique_labels) + 2,
-                                                       len(dataset.unique_labels) + 2)
-            model_saver = tf.train.Saver(max_to_keep=parameters['maximum_number_of_epochs'])  # defaults to saving all
-                                                                                              # variables
-            epoch_number = -1
-            f1_scores = []
-            try:
-                while True:
-                    step = 0
-                    epoch_number += 1
-                    print('\nStarting epoch %d of %s' % (epoch_number, parameters['maximum_number_of_epochs']))
-
-                    epoch_start_time = time.time()
-
-                    if parameters['use_pretrained_model'] and epoch_number == 0:
-                        # Restore pre-trained model parameters
-                        transition_params_trained = train.restore_model_parameters_from_pretrained_model(parameters,
-                            dataset, sess, model, model_saver)
-                    elif epoch_number != 0:
-                        # Train model: loop over all sequences of training set with shuffling
-                        sequence_numbers = list(range(len(dataset.token_indices['train'])))
-                        random.shuffle(sequence_numbers)
-                        for sequence_number in sequence_numbers:
-                            transition_params_trained = train.train_step(sess, dataset, sequence_number, model,
-                                                                         transition_params_trained, parameters)
-                            step += 1
-                            if step % 10 == 0:
-                                print('Training {0:.2f}% done'.format(step / len(sequence_numbers) * 100),
-                                      end='\r', flush=True, file=sys.stderr)
-
-                    epoch_elapsed_training_time = time.time() - epoch_start_time
-                    print('Training completed in {0:.2f} seconds'.format(epoch_elapsed_training_time), flush=True)
-
-                    y_pred, y_true, output_filepaths = train.predict_labels(sess, model, transition_params_trained,
-                        parameters, dataset, epoch_number, stats_graph_folder, dataset_filepaths)
-
-                    # Evaluate model: save and plot results
-                    evaluate.evaluate_model(results, dataset, y_pred, y_true, stats_graph_folder, epoch_number,
-                                            epoch_start_time, output_filepaths, parameters)
-
-                    if parameters['use_pretrained_model'] and not parameters['train_model']:
-                        conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder)
-                        break
-
-                    # Save model
-                    model_saver.save(sess, os.path.join(model_folder, 'model_{0:05d}.ckpt'.format(epoch_number)))
-
-                    # Save TensorBoard logs
-                    summary = sess.run(model.summary_op, feed_dict=None)
-                    writers['train'].add_summary(summary, epoch_number)
-                    writers['train'].flush()
-                    utils.copytree(writers['train'].get_logdir(), model_folder)
-
-                    # Early stop
-                    valid_f1_score = results['epoch'][epoch_number][0]['valid']['f1_score']['micro']
-                    f1_scores.append(valid_f1_score)
-                    if valid_f1_score > previous_best_valid_f1_score:
-                        previous_best_valid_f1_score = valid_f1_score
-                        conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder,
-                                                  overwrite=True)
-                    imax, _ = max(enumerate(f1_scores), key=lambda ix: (ix[1], -ix[0]))
-                    no_improvement = len(f1_scores) - 1 - imax
-
-                    print("The last %d epochs have not shown improvements on the validation set. "
-                          "patience=%d scores=%s %s"
-                          % (no_improvement, parameters['patience'], f1_scores[:imax], f1_scores[imax:]))
-
-                    if no_improvement >= parameters['patience']:
-                        print('Early Stop!')
-                        results['execution_details']['early_stop'] = True
-                        break
-
-                    if epoch_number >= parameters['maximum_number_of_epochs']:
-                        break
-
-            except KeyboardInterrupt:
-                results['execution_details']['keyboard_interrupt'] = True
-                print('Training interrupted')
-
-            print('Finishing the experiment')
-            end_time = time.time()
-            results['execution_details']['train_duration'] = end_time - start_time
-            results['execution_details']['train_end'] = end_time
-            evaluate.save_results(results, stats_graph_folder)
-            for dataset_type in dataset_filepaths.keys():
-                writers[dataset_type].close()
-
-    sess.close()  # release the session's resources
+    nn = NeuroNER(**arguments)
+    nn.fit()
+    nn.close()
 
 
 if __name__ == "__main__":

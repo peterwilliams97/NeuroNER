@@ -4,7 +4,6 @@ import glob
 import codecs
 import spacy
 import utils_nlp
-import utils
 import json
 from pycorenlp import StanfordCoreNLP
 
@@ -76,7 +75,7 @@ def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
     with codecs.open(text_filepath, 'r', 'UTF-8') as f:
         text = f.read()
     if verbose:
-        print("text: {0}".format(text))
+        pprint("\ntext:\n{0}\n".format(text))
 
     # parse annotation file
     entities = []
@@ -102,6 +101,8 @@ def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
                     print("\tanno: {0}".format(entity['text']))
                 # add to entitys data
                 entities.append(entity)
+    if verbose: print("\n\n")
+
     return text, entities
 
 

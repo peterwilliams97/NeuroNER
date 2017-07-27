@@ -8,6 +8,7 @@ import time
 import token
 import os
 import pickle
+import random
 
 
 def to_real_path(path):
@@ -42,8 +43,6 @@ class Dataset(object):
         line_count = -1
         tokens = []
         labels = []
-        characters = []
-        token_lengths = []
         new_token_sequence = []
         new_label_sequence = []
         if dataset_filepath:
@@ -75,28 +74,114 @@ class Dataset(object):
             if len(new_token_sequence) > 0:
                 labels.append(new_label_sequence)
                 tokens.append(new_token_sequence)
-
+            f.close()
         return labels, tokens, token_count, label_count, character_count
 
-    def load_dataset(self, dataset_filepaths, parameters):
+
+    def _convert_to_indices(self, dataset_types):
+        tokens = self.tokens
+        labels = self.labels
+        token_to_index = self.token_to_index
+        character_to_index = self.character_to_index
+        label_to_index = self.label_to_index
+        index_to_label = self.index_to_label
+
+        # Map tokens and labels to their indices
+        token_indices = {}
+        label_indices = {}
+        characters = {}
+        token_lengths = {}
+        character_indices = {}
+        character_indices_padded = {}
+        for dataset_type in dataset_types:
+            token_indices[dataset_type] = []
+            characters[dataset_type] = []
+            character_indices[dataset_type] = []
+            token_lengths[dataset_type] = []
+            character_indices_padded[dataset_type] = []
+            for token_sequence in tokens[dataset_type]:
+                token_indices[dataset_type].append([token_to_index.get(token, self.UNK_TOKEN_INDEX) for token in token_sequence])
+                characters[dataset_type].append([list(token) for token in token_sequence])
+                character_indices[dataset_type].append([[character_to_index.get(character, random.randint(1, max(self.index_to_character.keys()))) for character in token] for token in token_sequence])
+                token_lengths[dataset_type].append([len(token) for token in token_sequence])
+                longest_token_length_in_sequence = max(token_lengths[dataset_type][-1])
+                character_indices_padded[dataset_type].append([utils.pad_list(temp_token_indices, longest_token_length_in_sequence, self.PADDING_CHARACTER_INDEX) for temp_token_indices in character_indices[dataset_type][-1]])
+
+            label_indices[dataset_type] = []
+            for label_sequence in labels[dataset_type]:
+                label_indices[dataset_type].append([label_to_index[label] for label in label_sequence])
+
+        if self.verbose:
+            print('token_lengths[\'train\'][0][0:10]: {0}'.format(token_lengths['train'][0][0:10]))
+        if self.verbose:
+            print('characters[\'train\'][0][0:10]: {0}'.format(characters['train'][0][0:10]))
+        if self.verbose:
+            print('token_indices[\'train\'][0:10]: {0}'.format(token_indices['train'][0:10]))
+        if self.verbose:
+            print('label_indices[\'train\'][0:10]: {0}'.format(label_indices['train'][0:10]))
+        if self.verbose:
+            print('character_indices[\'train\'][0][0:10]: {0}'.format(character_indices['train'][0][0:10]))
+        if self.verbose:
+            print('character_indices_padded[\'train\'][0][0:10]: {0}'.format(character_indices_padded['train'][0][0:10])) # Vectorize the labels
+        # [Numpy 1-hot array](http://stackoverflow.com/a/42263603/395857)
+        label_binarizer = sklearn.preprocessing.LabelBinarizer()
+        label_binarizer.fit(range(max(index_to_label.keys()) + 1))
+        label_vector_indices = {}
+        for dataset_type in dataset_types:
+            label_vector_indices[dataset_type] = []
+            for label_indices_sequence in label_indices[dataset_type]:
+                label_vector_indices[dataset_type].append(label_binarizer.transform(label_indices_sequence))
+
+        if self.verbose:
+            print('label_vector_indices[\'train\'][0:2]: {0}'.format(label_vector_indices['train'][0:2]))
+        if self.verbose:
+            print('len(label_vector_indices[\'train\']): {0}'.format(len(label_vector_indices['train'])))
+
+        return token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices
+
+    def update_dataset(self, dataset_filepaths, dataset_types):
+        '''
+        dataset_filepaths : dictionary with keys 'train', 'valid', 'test', 'deploy'
+        Overwrites the data of type specified in dataset_types using the existing token_to_index, character_to_index, and label_to_index mappings.
+        '''
+        for dataset_type in dataset_types:
+            self.labels[dataset_type], self.tokens[dataset_type], _, _, _ = self._parse_dataset(dataset_filepaths.get(dataset_type, None))
+
+        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices = self._convert_to_indices(dataset_types)
+
+        self.token_indices.update(token_indices)
+        self.label_indices.update(label_indices)
+        self.character_indices_padded.update(character_indices_padded)
+        self.character_indices.update(character_indices)
+        self.token_lengths.update(token_lengths)
+        self.characters.update(characters)
+        self.label_vector_indices.update(label_vector_indices)
+
+    def load_dataset(self, dataset_filepaths, parameters, token_to_vector=None):
         '''
             dataset_filepaths : dictionary with keys 'train', 'valid', 'test', 'deploy'
         '''
         start_time = time.time()
         print('Load dataset... ', end='', flush=True)
-        all_pretrained_tokens = []
         if parameters['token_pretrained_embedding_filepath'] != '':
             parameters['token_pretrained_embedding_filepath'] = to_real_path(parameters['token_pretrained_embedding_filepath'])
-            all_pretrained_tokens = utils_nlp.load_tokens_from_pretrained_token_embeddings(parameters)
-        if self.verbose: print("len(all_pretrained_tokens): {0}".format(len(all_pretrained_tokens)))
+            if token_to_vector is None:
+                token_to_vector = utils_nlp.load_pretrained_token_embeddings(parameters)
+        else:
+            token_to_vector = {}
+        if self.verbose:
+            print("len(token_to_vector): {0}".format(len(token_to_vector)))
+
 
         # Load pretraining dataset to ensure that index to label is compatible to the pretrained model,
         #   and that token embeddings that are learned in the pretrained model are loaded properly.
         all_tokens_in_pretraining_dataset = []
+        all_characters_in_pretraining_dataset = []
         if parameters['use_pretrained_model']:
             pretraining_dataset = pickle.load(open(os.path.join(parameters['pretrained_model_folder'],
                                               'dataset.pickle'), 'rb'))
             all_tokens_in_pretraining_dataset = pretraining_dataset.index_to_token.values()
+            all_characters_in_pretraining_dataset = pretraining_dataset.index_to_character.values()
 
         remap_to_unk_count_threshold = 1
         self.UNK_TOKEN_INDEX = 0
@@ -106,8 +191,6 @@ class Dataset(object):
         self.unique_labels = []
         labels = {}
         tokens = {}
-        characters = {}
-        token_lengths = {}
         label_count = {}
         token_count = {}
         character_count = {}
@@ -122,13 +205,28 @@ class Dataset(object):
         for token in list(token_count['train'].keys()) + list(token_count['valid'].keys()) + list(token_count['test'].keys()) + list(token_count['deploy'].keys()):
             token_count['all'][token] = token_count['train'][token] + token_count['valid'][token] + token_count['test'][token] + token_count['deploy'][token]
 
-        for dataset_type in dataset_filepaths.keys():
-            if self.verbose: print("dataset_type: {0}".format(dataset_type))
-            if self.verbose: print("len(token_count[dataset_type]): {0}".format(len(token_count[dataset_type])))
+        if parameters['load_all_pretrained_token_embeddings']:
+            for token in token_to_vector:
+                if token not in token_count['all']:
+                    token_count['all'][token] = -1
+                    token_count['train'][token] = -1
+            for token in all_tokens_in_pretraining_dataset:
+                if token not in token_count['all']:
+                    token_count['all'][token] = -1
+                    token_count['train'][token] = -1
 
         character_count['all'] = {}
         for character in list(character_count['train'].keys()) + list(character_count['valid'].keys()) + list(character_count['test'].keys()) + list(character_count['deploy'].keys()):
             character_count['all'][character] = character_count['train'][character] + character_count['valid'][character] + character_count['test'][character] + character_count['deploy'][character]
+
+        for character in all_characters_in_pretraining_dataset:
+            if character not in character_count['all']:
+                character_count['all'][character] = -1
+                character_count['train'][character] = -1
+
+        for dataset_type in dataset_filepaths.keys():
+            if self.verbose: print("dataset_type: {0}".format(dataset_type))
+            if self.verbose: print("len(token_count[dataset_type]): {0}".format(len(token_count[dataset_type])))
 
         label_count['all'] = {}
         for character in list(label_count['train'].keys()) + list(label_count['valid'].keys()) + list(label_count['test'].keys()) + list(label_count['deploy'].keys()):
@@ -151,7 +249,7 @@ class Dataset(object):
             if parameters['remap_unknown_tokens_to_unk'] == 1 and \
                 (token_count['train'][token] == 0 or \
                 parameters['load_only_pretrained_token_embeddings']) and \
-                not utils_nlp.is_token_in_pretrained_embeddings(token, all_pretrained_tokens, parameters) and \
+                not utils_nlp.is_token_in_pretrained_embeddings(token, token_to_vector, parameters) and \
                 token not in all_tokens_in_pretraining_dataset:
                 if self.verbose: print("token: {0}".format(token))
                 if self.verbose: print("token.lower(): {0}".format(token.lower()))
@@ -242,68 +340,26 @@ class Dataset(object):
                 if len(label_sequence) == 1 and label_sequence[0] != 'O':
                     print("{0}\t{1}".format(token_sequence[0], label_sequence[0]))
 
-        # Map tokens and labels to their indices
-        token_indices = {}
-        label_indices = {}
-        character_indices = {}
-        character_indices_padded = {}
-        for dataset_type in dataset_filepaths.keys():
-            token_indices[dataset_type] = []
-            characters[dataset_type] = []
-            character_indices[dataset_type] = []
-            token_lengths[dataset_type] = []
-            character_indices_padded[dataset_type] = []
-            for token_sequence in tokens[dataset_type]:
-                token_indices[dataset_type].append([token_to_index[token] for token in token_sequence])
-                characters[dataset_type].append([list(token) for token in token_sequence])
-                character_indices[dataset_type].append([[character_to_index[character] for character in token] for token in token_sequence])
-                token_lengths[dataset_type].append([len(token) for token in token_sequence])
-
-                longest_token_length_in_sequence = max(token_lengths[dataset_type][-1])
-                character_indices_padded[dataset_type].append([ utils.pad_list(temp_token_indices, longest_token_length_in_sequence, self.PADDING_CHARACTER_INDEX)
-                                                                for temp_token_indices in character_indices[dataset_type][-1]])
-
-            label_indices[dataset_type] = []
-            for label_sequence in labels[dataset_type]:
-                label_indices[dataset_type].append([label_to_index[label] for label in label_sequence])
-
-        if self.verbose: print('token_lengths[\'train\'][0][0:10]: {0}'.format(token_lengths['train'][0][0:10]))
-        if self.verbose: print('characters[\'train\'][0][0:10]: {0}'.format(characters['train'][0][0:10]))
-        if self.verbose: print('token_indices[\'train\'][0:10]: {0}'.format(token_indices['train'][0:10]))
-        if self.verbose: print('label_indices[\'train\'][0:10]: {0}'.format(label_indices['train'][0:10]))
-        if self.verbose: print('character_indices[\'train\'][0][0:10]: {0}'.format(character_indices['train'][0][0:10]))
-        if self.verbose: print('character_indices_padded[\'train\'][0][0:10]: {0}'.format(character_indices_padded['train'][0][0:10]))
-
-        # Vectorize the labels
-        # [Numpy 1-hot array](http://stackoverflow.com/a/42263603/395857)
-        label_binarizer = sklearn.preprocessing.LabelBinarizer()
-        label_binarizer.fit(range(max(index_to_label.keys())+1))
-        label_vector_indices = {}
-        for dataset_type in dataset_filepaths.keys():
-            label_vector_indices[dataset_type] = []
-            for label_indices_sequence in label_indices[dataset_type]:
-                label_vector_indices[dataset_type].append(label_binarizer.transform(label_indices_sequence))
-
-        if self.verbose: print('label_vector_indices[\'train\'][0:2]: {0}'.format(label_vector_indices['train'][0:2]))
-
-        if self.verbose: print('len(label_vector_indices[\'train\']): {0}'.format(len(label_vector_indices['train'])))
         self.token_to_index = token_to_index
         self.index_to_token = index_to_token
-        self.token_indices = token_indices
-        self.label_indices = label_indices
-        self.character_indices_padded = character_indices_padded
         self.index_to_character = index_to_character
         self.character_to_index = character_to_index
-        self.character_indices = character_indices
-        self.token_lengths = token_lengths
-        self.characters = characters
-        self.tokens = tokens
-        self.labels = labels
-        self.label_vector_indices = label_vector_indices
         self.index_to_label = index_to_label
         self.label_to_index = label_to_index
         if self.verbose: print("len(self.token_to_index): {0}".format(len(self.token_to_index)))
         if self.verbose: print("len(self.index_to_token): {0}".format(len(self.index_to_token)))
+        self.tokens = tokens
+        self.labels = labels
+
+        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices = self._convert_to_indices(dataset_filepaths.keys())
+
+        self.token_indices = token_indices
+        self.label_indices = label_indices
+        self.character_indices_padded = character_indices_padded
+        self.character_indices = character_indices
+        self.token_lengths = token_lengths
+        self.characters = characters
+        self.label_vector_indices = label_vector_indices
 
         self.number_of_classes = max(self.index_to_label.keys()) + 1
         self.vocabulary_size = max(self.index_to_token.keys()) + 1
@@ -327,4 +383,6 @@ class Dataset(object):
 
         elapsed_time = time.time() - start_time
         print('done ({0:.2f} seconds)'.format(elapsed_time))
+
+        return token_to_vector
 
