@@ -18,20 +18,21 @@ import glob
 import brat_to_conll
 import conll_to_brat
 import codecs
-import utils_nlp
-matplotlib.use('Agg')
-import dataset as ds
-import time
-import random
-import evaluate
-import configparser
-import train
 from pprint import pprint
-from entity_lstm import EntityLSTM
 from tensorflow.contrib.tensorboard.plugins import projector
 import argparse
 from argparse import RawTextHelpFormatter
 import sys
+import time
+import random
+import utils_nlp
+import dataset as ds
+import evaluate
+import configparser
+import train
+from entity_lstm import EntityLSTM
+
+matplotlib.use('Agg')
 
 # http://stackoverflow.com/questions/42217532/tensorflow-version-1-0-0-rc2-on-windows-opkernel-op-bestsplits-device-typ
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -140,6 +141,10 @@ def load_parameters(parameters_filepath, arguments={}, verbose=True):
 def get_valid_dataset_filepaths(parameters):
     dataset_filepaths = {}
     dataset_brat_folders = {}
+
+    print('dataset_text_folder="%s"' % parameters['dataset_text_folder'])
+    assert os.path.exists(parameters['dataset_text_folder']), parameters['dataset_text_folder']
+
     for dataset_type in ['train', 'valid', 'test', 'deploy']:
         dataset_filepaths[dataset_type] = os.path.join(parameters['dataset_text_folder'],
                                                        '{0}.txt'.format(dataset_type))
@@ -290,12 +295,12 @@ def parse_arguments(arguments=None):
 
 
 def main(argv=sys.argv):
-    ''' NeuroNER main method
+    """ NeuroNER main method
 
       Args:
           parameters_filepath the path to the parameters file
           output_folder the path to the output folder
-    '''
+    """
     arguments = parse_arguments(argv[1:])
     parameters, conf_parameters = load_parameters(arguments['parameters_filepath'], arguments=arguments)
     dataset_filepaths, dataset_brat_folders = get_valid_dataset_filepaths(parameters)
@@ -397,7 +402,6 @@ def main(argv=sys.argv):
                 model.load_pretrained_token_embeddings(sess, dataset, parameters)
 
             # Start training + evaluation loop. Each iteration corresponds to 1 epoch.
-            bad_counter = 0  # number of epochs with no improvement on the validation test in terms of F1-score
             previous_best_valid_f1_score = 0
             transition_params_trained = np.random.rand(len(dataset.unique_labels) + 2,
                                                        len(dataset.unique_labels) + 2)
@@ -427,7 +431,7 @@ def main(argv=sys.argv):
                             step += 1
                             if step % 10 == 0:
                                 print('Training {0:.2f}% done'.format(step / len(sequence_numbers) * 100),
-                                      end='\r', flush=True)
+                                      end='\r', flush=True, file=sys.stderr)
 
                     epoch_elapsed_training_time = time.time() - epoch_start_time
                     print('Training completed in {0:.2f} seconds'.format(epoch_elapsed_training_time), flush=True)
@@ -459,11 +463,12 @@ def main(argv=sys.argv):
                         previous_best_valid_f1_score = valid_f1_score
                         conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder,
                                                   overwrite=True)
-                    _, imax = max(enumerate(valid_f1_score), key=lambda ix: (ix[1], -ix[0]))
-                    no_improvement = len(valid_f1_score) - 1 - imax
-                    # Don't use bad_counter
-                    print("The last %d epochs have not shown improvements on the validation set. patience=%d scores=%s"
-                          % (no_improvement, parameters['patience'], f1_scores[-parameters['patience']:]))
+                    imax, _ = max(enumerate(f1_scores), key=lambda ix: (ix[1], -ix[0]))
+                    no_improvement = len(f1_scores) - 1 - imax
+
+                    print("The last %d epochs have not shown improvements on the validation set. "
+                          "patience=%d scores=%s %s"
+                          % (no_improvement, parameters['patience'], f1_scores[:imax], f1_scores[imax:]))
 
                     if no_improvement >= parameters['patience']:
                         print('Early Stop!')

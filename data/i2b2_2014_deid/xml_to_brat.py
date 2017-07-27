@@ -17,6 +17,7 @@ import utils
 
 def xml_to_brat(input_folder, output_folder, overwrite=True):
     print('input_folder: {0}'.format(input_folder))
+    assert os.path.exists(input_folder)
     start_time = time.time()
     if overwrite:
         shutil.rmtree(output_folder, ignore_errors=True)
@@ -32,7 +33,7 @@ def xml_to_brat(input_folder, output_folder, overwrite=True):
             f.write(text)
 
         # Get PHI tags
-        tags = xmldoc.findall('TAGS')[0] # [0] because there is only one <TAGS>...</TAGS>
+        tags = xmldoc.findall('TAGS')[0]  # [0] because there is only one <TAGS>...</TAGS>
         entities = []
         for tag in tags:
             entity = {}
@@ -45,6 +46,7 @@ def xml_to_brat(input_folder, output_folder, overwrite=True):
 
     time_spent = time.time() - start_time
     print("Time spent formatting: {0:.2f} seconds".format(time_spent))
+
 
 if __name__ == '__main__':
     print("Started formatting i2b2_2014_deid's XML files to BRAT")

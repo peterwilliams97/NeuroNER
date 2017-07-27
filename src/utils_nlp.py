@@ -35,7 +35,8 @@ def load_pretrained_token_embeddings(parameters):
         #if count > 1000:break
         cur_line = cur_line.strip()
         cur_line = cur_line.split(' ')
-        if len(cur_line)==0:continue
+        if len(cur_line) == 0:
+            continue
         token = cur_line[0]
         vector = np.array([float(x) for x in cur_line[1:]])
         token_to_vector[token] = vector

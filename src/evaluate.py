@@ -21,7 +21,7 @@ def assess_model(y_pred, y_true, labels, target_names, labels_with_o, target_nam
     utils_plots.plot_classification_report(classification_report,
             title='Classification report for epoch {0} in {1} ({2} evaluation)\n'.format(
                            epoch_number, dataset_type, evaluation_mode),
-            map='RdBu')
+            cmap='RdBu')
     plt.savefig(os.path.join(stats_graph_folder,
                'classification_report_for_epoch_{0:04d}_in_{1}_{2}_evaluation.{3}'.format(
                         epoch_number, dataset_type, evaluation_mode, parameters['plot_format'])),

@@ -56,11 +56,11 @@ SENTENCE_END_NEWLINE_REGEX = re_compile(ur'''
     ''', DOTALL | VERBOSE)
 ###
 
+
 def _refine_split(offsets, original_text):
     # Postprocessor expects newlines, so add. Also, replace
     # sentence-internal newlines with spaces not to confuse it.
-    new_text = '\n'.join((original_text[o[0]:o[1]].replace('\n', ' ')
-            for o in offsets))
+    new_text = '\n'.join((original_text[o[0]:o[1]].replace('\n', ' ') for o in offsets))
 
     from sspostproc import refine_split
     output = refine_split(new_text)

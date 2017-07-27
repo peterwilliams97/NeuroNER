@@ -74,7 +74,7 @@ class EntityLSTM(object):
         self.input_label_indices_vector = tf.placeholder(tf.float32, [None, dataset.number_of_classes],
                                                          name="input_label_indices_vector")
         self.input_label_indices_flat = tf.placeholder(tf.int32, [None], name="input_label_indices_flat")
-        self.input_token_character_indices = tf.placeholder(tf.int32, [None, None], name="input_token_indices")
+        self.input_token_character_indices = tf.placeholder(tf.int32, [None, None], name="input_token_indices")  # !@#$
         self.input_token_lengths = tf.placeholder(tf.int32, [None], name="input_token_lengths")
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 

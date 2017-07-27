@@ -3,21 +3,23 @@ import tensorflow as tf
 import numpy as np
 import sklearn.metrics
 from evaluate import remap_labels
-from pprint import pprint
 import pickle
 import utils_tf
-import main
 import codecs
 import utils_nlp
-#from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
 
 def train_step(sess, dataset, sequence_number, model, transition_params_trained, parameters):
     # Perform one iteration
+    # print('@@ train_step: sequence_number=%s' % sequence_number)
     token_indices_sequence = dataset.token_indices['train'][sequence_number]
+    # print('@@ train_step: token_indices_sequence=%s %d' % (type(token_indices_sequence[0]), len(token_indices_sequence)))
+
     for i, token_index in enumerate(token_indices_sequence):
+        # print('@@ train_step: i=%d token_index=%s' % (i, token_index))
         if token_index in dataset.infrequent_token_indices and np.random.uniform() < 0.5:
             token_indices_sequence[i] = dataset.token_to_index[dataset.UNK]
+
     feed_dict = {
         model.input_token_indices: token_indices_sequence,
         model.input_label_indices_vector: dataset.label_vector_indices['train'][sequence_number],

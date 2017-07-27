@@ -30,12 +30,12 @@ __initial.append((re.compile(r'\n([.!?]+)\n'), r' \1\n'))
 # no breaks inside parens/brackets. (To protect against cases where a
 # pair of locally mismatched parentheses in different parts of a large
 # document happen to match, limit size of intervening context. As this
-# is not an issue in cases where there are no interveining brackets,
+# is not an issue in cases where there are no intervening brackets,
 # allow an unlimited length match in those cases.)
 
 __repeated = []
 
-# unlimited length for no intevening parens/brackets
+# unlimited length for no intervening parens/brackets
 __repeated.append((re.compile(r'(\([^\[\]\(\)]*)\n([^\[\]\(\)]*\))'),r'\1 \2'))
 __repeated.append((re.compile(r'(\[[^\[\]\(\)]*)\n([^\[\]\(\)]*\])'),r'\1 \2'))
 # standard mismatched with possible intervening
@@ -116,6 +116,7 @@ def refine_split(s):
 
     return s
 
+
 if __name__ == "__main__":
     import sys
     import codecs
@@ -131,4 +132,4 @@ if __name__ == "__main__":
                 sys.stdout.write(refine_split(s).encode(OUTPUT_ENCODING))
         except Exception, e:
             print >> sys.stderr, "Failed to read", fn, ":", e
-            
+

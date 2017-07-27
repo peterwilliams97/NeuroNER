@@ -146,16 +146,17 @@ def plot_classification_report(classification_report, title='Classification repo
     if from_conll_json:
         for label in sorted(classification_report.keys()):
             support.append(classification_report[label]["support"])
-            classes.append('micro-avg' if label=='all' else label)
-            class_names.append('micro-avg' if label=='all' else label)
+            classes.append('micro-avg' if label == 'all' else label)
+            class_names.append('micro-avg' if label == 'all' else label)
             plotMat.append([float(classification_report[label][x]) for x in ["precision", "recall", "f1"]])
     else:
         lines = classification_report.split('\n')
         for line in lines[2 : (len(lines) - 1)]:
             t = line.strip().replace('avg / total', 'micro-avg').split()
-            if len(t) < 2: continue
+            if len(t) < 2:
+                continue
             classes.append(t[0])
-            v = [float(x)*100 for x in t[1: len(t) - 1]]
+            v = [float(x) * 100 for x in t[1: len(t) - 1]]
             support.append(int(t[-1]))
             class_names.append(t[0])
             plotMat.append(v)
@@ -163,7 +164,7 @@ def plot_classification_report(classification_report, title='Classification repo
     xlabel = 'Metrics'
     ylabel = 'Classes'
     xticklabels = ['Precision', 'Recall', 'F1-score']
-    yticklabels = ['{0} ({1})'.format(class_names[idx], sup) for idx, sup  in enumerate(support)]
+    yticklabels = ['{0} ({1})'.format(class_names[idx], sup) for idx, sup in enumerate(support)]
     figure_width = 25
     figure_height = len(class_names) + 7
     correct_orientation = True
@@ -176,9 +177,9 @@ def plot_hist(sequence, xlabel, ylabel, title, graph_path):
     xmin = min(sequence)
     xmax = max(sequence)
     step = 1
-    y, x = np.histogram(sequence, bins=np.linspace(xmin, xmax, (xmax-xmin+1)/step))
+    y, x = np.histogram(sequence, bins=np.linspace(xmin, xmax, (xmax - xmin + 1) / step))
 
-    plt.bar(x[:-1], y, width=x[1]-x[0], color='red', alpha=0.5)
+    plt.bar(x[:-1], y, width=x[1] - x[0], color='red', alpha=0.5)
     plt.grid(True)
     plt.xlabel(xlabel, fontsize=8)
     plt.title(title, fontsize=12)
@@ -192,7 +193,7 @@ def plot_barh(x, y, xlabel, ylabel, title, graph_path):
     fig, ax = plt.subplots()
     ind = np.arange(len(y))  # the x locations for the groups
     ax.barh(ind, y, color="blue")
-    ax.set_yticks(ind+width/2)
+    ax.set_yticks(ind + width / 2)
     ax.set_yticklabels(x, minor=False)
     # http://stackoverflow.com/questions/30228069/how-to-display-the-value-of-the-bar-on-each-bar-with-pyplot-barh/30229062#30229062
     for i, v in enumerate(y):
@@ -200,7 +201,7 @@ def plot_barh(x, y, xlabel, ylabel, title, graph_path):
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(graph_path, dpi=300, format='png', bbox_inches='tight') # use format='svg' or 'pdf' for vectorial pictures
+    plt.savefig(graph_path, dpi=300, format='png', bbox_inches='tight')  # use format='svg' or 'pdf' for vectorial pictures
     plt.clf()
     plt.close()
 
@@ -214,7 +215,8 @@ def plot_precision_recall_curve(recall, precision, graph_path, title):
     plt.xlim([0.0, 1.0])
     plt.title(title)
     plt.legend(loc="upper right")
-    plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight') # use format='svg' or 'pdf' for vectorial pictures
+    # use format='svg' or 'pdf' for vectorial pictures
+    plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -227,7 +229,8 @@ def plot_roc_curve(fpr, tpr, graph_path, title):
     plt.xlim([0.0, 1.0])
     plt.title(title)
     plt.legend(loc="lower left")
-    plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight') # use format='svg' or 'pdf' for vectorial pictures
+    # use format='svg' or 'pdf' for vectorial pictures
+    plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight')
     plt.close()
 
 
@@ -240,5 +243,6 @@ def plot_threshold_vs_accuracy_curve(accuracies, thresholds, graph_path, title):
     plt.xlim([0.0, 1.0])
     plt.title(title)
     plt.legend(loc="lower left")
-    plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight') # use format='svg' or 'pdf' for vectorial pictures
+    # use format='svg' or 'pdf' for vectorial pictures
+    plt.savefig(graph_path, dpi=600, format='pdf', bbox_inches='tight')
     plt.close()
