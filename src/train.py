@@ -3,8 +3,6 @@ import tensorflow as tf
 import numpy as np
 import sklearn.metrics
 from evaluate import remap_labels
-import pickle
-import utils_tf
 import codecs
 import utils_nlp
 
@@ -13,7 +11,7 @@ def train_step(sess, dataset, sequence_number, model, parameters):
     # Perform one iteration
     # print('@@ train_step: sequence_number=%s' % sequence_number)
     token_indices_sequence = dataset.token_indices['train'][sequence_number]
-    # print('@@ train_step: token_indices_sequence=%s %d' % (type(token_indices_sequence[0]), len(token_indices_sequence)))
+    # print('train_step: token_indices_sequence=%s %d' % (type(token_indices_sequence[0]), len(token_indices_sequence)))
 
     for i, token_index in enumerate(token_indices_sequence):
         # print('@@ train_step: i=%d token_index=%s' % (i, token_index))
@@ -29,7 +27,9 @@ def train_step(sess, dataset, sequence_number, model, parameters):
         model.dropout_keep_prob: 1 - parameters['dropout_rate']
     }
     _, _, loss, accuracy, transition_params_trained = sess.run(
-                    [model.train_op, model.global_step, model.loss, model.accuracy, model.transition_parameters],
+                    [model.train_op, model.global_step,
+                     model.loss, model.accuracy,
+                     model.transition_parameters],
                     feed_dict)
     return transition_params_trained
 
@@ -101,7 +101,7 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
             os.system(shell_command)
             with open(conll_output_filepath, 'r') as f:
                 classification_report = f.read()
-                print(classification_report)
+            print(classification_report)
         else:
             new_y_pred, new_y_true, new_label_indices, new_label_names, _, _ = remap_labels(
                 all_predictions, all_y_true, dataset, parameters['main_evaluation_mode'])

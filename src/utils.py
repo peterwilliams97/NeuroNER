@@ -1,5 +1,5 @@
 '''
-Miscellaneous utility functions
+    Miscellaneous utility functions
 '''
 import collections
 import operator
@@ -11,9 +11,9 @@ import shutil
 
 def order_dictionary(dictionary, mode, reverse=False):
     '''
-    Order a dictionary by 'key' or 'value'.
-    mode should be either 'key' or 'value'
-    http://stackoverflow.com/questions/613183/sort-a-python-dictionary-by-value
+        Order a dictionary by 'key' or 'value'.
+        mode should be either 'key' or 'value'
+        http://stackoverflow.com/questions/613183/sort-a-python-dictionary-by-value
     '''
 
     if mode == 'key':
@@ -37,10 +37,10 @@ def order_dictionary(dictionary, mode, reverse=False):
 
 def reverse_dictionary(dictionary):
     '''
-    http://stackoverflow.com/questions/483666/python-reverse-inverse-a-mapping
-    http://stackoverflow.com/questions/25480089/right-way-to-initialize-an-ordereddict-using-its-constructor-such-that-it-retain
+        http://stackoverflow.com/questions/483666/python-reverse-inverse-a-mapping
+        http://stackoverflow.com/questions/25480089/right-way-to-initialize-an-ordereddict-using-its-constructor-such-that-it-retain
     '''
-    #print('type(dictionary): {0}'.format(type(dictionary)))
+    # print('type(dictionary): {0}'.format(type(dictionary)))
     if type(dictionary) is collections.OrderedDict:
         #print(type(dictionary))
         return collections.OrderedDict([(v, k) for k, v in dictionary.items()])
@@ -112,6 +112,7 @@ def convert_configparser_to_dictionary(config):
     '''
     my_config_parser_dict = {s: dict(config.items(s)) for s in config.sections()}
     return my_config_parser_dict
+
 
 def get_parameter_to_section_of_configparser(config):
     parameter_to_section = {}

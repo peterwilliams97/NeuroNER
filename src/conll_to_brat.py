@@ -64,7 +64,6 @@ def check_compatibility_between_conll_and_brat_text(conll_filepath, brat_folder)
     brat_folder: folder that contains the .txt (and .ann) files that are formatted according to brat.
 
     '''
-    verbose = False
     dataset_type = utils.get_basename_without_extension(conll_filepath)
     print("Checking compatibility between CONLL and BRAT for {0} set ... ".format(dataset_type), end='')
     conll_file = codecs.open(conll_filepath, 'r', 'UTF-8')
@@ -120,7 +119,8 @@ def output_entities(brat_output_folder, previous_filename, entities, text_filepa
         shutil.copy(text_filepath, brat_output_folder)
 
 
-def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_folder, brat_output_folder, overwrite=False):
+def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_folder,
+    brat_output_folder, overwrite=False):
     '''
     convert conll file in conll-filepath to brat annotations and output to brat_output_folder,
     with reference to the existing text files in brat_original_folder

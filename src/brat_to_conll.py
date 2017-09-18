@@ -101,7 +101,8 @@ def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
                     print("\tanno: {0}".format(entity['text']))
                 # add to entitys data
                 entities.append(entity)
-    if verbose: print("\n\n")
+    if verbose:
+        print("\n\n")
 
     return text, entities
 
@@ -171,7 +172,7 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
                         break
 
                 if len(entities) == 0:
-                    entity={'end':0}
+                    entity = {'end': 0}
                 if token['label'] == 'O':
                     gold_label = 'O'
                     inside = False
@@ -183,9 +184,13 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
                 if token['end'] == entity['end']:
                     inside = False
                 previous_token_label = token['label']
-                if verbose: print('{0} {1} {2} {3} {4}\n'.format(token['text'], base_filename, token['start'], token['end'], gold_label))
-                output_file.write('{0} {1} {2} {3} {4}\n'.format(token['text'], base_filename, token['start'], token['end'], gold_label))
-            if verbose: print('\n')
+                if verbose:
+                    print('{0} {1} {2} {3} {4}\n'.format(
+                        token['text'], base_filename, token['start'], token['end'], gold_label))
+                output_file.write('{0} {1} {2} {3} {4}\n'.format(
+                        token['text'], base_filename, token['start'], token['end'], gold_label))
+            if verbose:
+                print('\n')
             output_file.write('\n')
 
     output_file.close()

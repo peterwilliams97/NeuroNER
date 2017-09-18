@@ -1,5 +1,5 @@
 '''
-Miscellaneous utility functions for natural language processing
+    Miscellaneous utility functions for natural language processing
 '''
 import codecs
 import re
@@ -32,7 +32,7 @@ def load_pretrained_token_embeddings(parameters):
     token_to_vector = {}
     for cur_line in file_input:
         count += 1
-        #if count > 1000:break
+        # if count > 1000:break
         cur_line = cur_line.strip()
         cur_line = cur_line.split(' ')
         if len(cur_line) == 0:
@@ -52,7 +52,9 @@ def is_token_in_pretrained_embeddings(token, all_pretrained_tokens, parameters):
 
 
 def get_parsed_conll_output(conll_output_filepath):
-    conll_output = [l.rstrip().replace('%','').replace(';','').replace(':', '').strip() for l in codecs.open(conll_output_filepath, 'r', 'utf8')]
+    with codecs.open(conll_output_filepath, 'r', 'utf8') as f:
+        conll_output = [l.rstrip().replace('%', '').replace(';', '').replace(':', '').strip()
+                        for l in f]
     parsed_output = {}
     line = conll_output[1].split()
     parsed_output['all'] = {'accuracy': float(line[1]),
@@ -88,13 +90,13 @@ def replace_unicode_whitespaces_with_ascii_whitespace(string):
 
 def end_current_entity(previous_label_without_bio, current_entity_length, new_labels, i):
     '''
-    Helper function for bio_to_bioes
+        Helper function for bio_to_bioes
     '''
     if current_entity_length == 0:
         return
     if current_entity_length == 1:
         new_labels[i - 1] = 'S-' + previous_label_without_bio
-    else:  #e lif current_entity_length > 1
+    else:  # e if current_entity_length > 1
         new_labels[i - 1] = 'E-' + previous_label_without_bio
 
 

@@ -1,11 +1,12 @@
+import sys
 import numpy as np
-import matplotlib.pyplot as plt
 import sklearn.metrics
 import os
 import utils_plots
 import json
 import time
 import utils_nlp
+import matplotlib.pyplot as plt
 
 
 def assess_model(y_pred, y_true, labels, target_names, labels_with_o, target_names_with_o, dataset_type,
@@ -33,22 +34,23 @@ def assess_model(y_pred, y_true, labels, target_names, labels_with_o, target_nam
     results['f1_score'] = {}
     for f1_average_style in ['weighted', 'micro', 'macro']:
         results['f1_score'][f1_average_style] = sklearn.metrics.f1_score(y_true, y_pred,
-            average=f1_average_style, labels=labels)*100
+            average=f1_average_style, labels=labels) * 100
     results['f1_score']['per_label'] = [x * 100 for x in sklearn.metrics.precision_recall_fscore_support(
             y_true, y_pred, average=None, labels=labels)[2].tolist()]
 
     confusion_matrix = sklearn.metrics.confusion_matrix(y_true, y_pred, labels=labels_with_o)
     results['confusion_matrix'] = confusion_matrix.tolist()
     title = 'Confusion matrix for epoch {0} in {1} ({2} evaluation)\n'.format(epoch_number, dataset_type,
-        evaluation_mode)
+            evaluation_mode)
     xlabel = 'Predicted'
     ylabel = 'True'
     xticklabels = yticklabels = target_names_with_o
     utils_plots.heatmap(confusion_matrix, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40,
                         figure_height=20, correct_orientation=True, fmt="%d",
                         remove_diagonal=True)
-    plt.savefig(os.path.join(stats_graph_folder, 'confusion_matrix_for_epoch_{0:04d}_in_{1}_{2}_evaluation.{3}'.format(epoch_number, dataset_type,
-                                                                                                                       evaluation_mode, parameters['plot_format'])),
+    plt.savefig(os.path.join(stats_graph_folder,
+                'confusion_matrix_for_epoch_{0:04d}_in_{1}_{2}_evaluation.{3}'.format(
+                    epoch_number, dataset_type, evaluation_mode, parameters['plot_format'])),
                 dpi=300, format=parameters['plot_format'], bbox_inches='tight')
     plt.close()
 
@@ -60,18 +62,19 @@ def assess_model(y_pred, y_true, labels, target_names, labels_with_o, target_nam
 
 def save_results(results, stats_graph_folder):
     '''
-    Save results
+        Save results
     '''
-    json.dump(results, open(os.path.join(stats_graph_folder, 'results.json'), 'w'), indent=4, sort_keys=True)
+    with open(os.path.join(stats_graph_folder, 'results.json'), 'w') as f:
+        json.dump(results, f, indent=4, sort_keys=True)
 
 
 def plot_f1_vs_epoch(results, stats_graph_folder, metric, parameters, from_json=False):
     '''
-    Takes results dictionary and saves the f1 vs epoch plot in stats_graph_folder.
-    from_json indicates if the results dictionary was loaded from results.json file.
-    In this case, dictionary indexes are mapped from string to int.
+        Takes results dictionary and saves the f1 vs epoch plot in stats_graph_folder.
+        from_json indicates if the results dictionary was loaded from results.json file.
+        In this case, dictionary indexes are mapped from string to int.
 
-    metric can be f1_score or accuracy
+        metric can be f1_score or accuracy
     '''
 
     assert(metric in ['f1_score', 'accuracy_score', 'f1_conll'])
@@ -99,7 +102,6 @@ def plot_f1_vs_epoch(results, stats_graph_folder, metric, parameters, from_json=
         for dataset_type in dataset_types:
             f1_dict_all[dataset_type].append(result_epoch[dataset_type][metric])
 
-
     # Plot micro f1 vs epoch for all classes
     plt.figure()
     plot_handles = []
@@ -122,10 +124,12 @@ def plot_f1_vs_epoch(results, stats_graph_folder, metric, parameters, from_json=
         best_score_based_on_valid = f1_all[dataset_type][best_epoch]
         results[dataset_type]['best_{0}_based_on_valid'.format(metric)] = best_score_based_on_valid
         if dataset_type == 'test':
-            plot_handles.append(plt.axhline(y=best_score_based_on_valid, label=dataset_type + ' (best: {0:.4f})'.format(best_score_based_on_valid),
+            plot_handles.append(plt.axhline(y=best_score_based_on_valid,
+                                            label=dataset_type + ' (best: {0:.4f})'.format(best_score_based_on_valid),
                                             color='k', linestyle=':'))
         else:
-            plt.axhline(y=best_score_based_on_valid, label='{0:.4f}'.format(best_score_based_on_valid), color='k', linestyle=':')
+            plt.axhline(y=best_score_based_on_valid,
+                        label='{0:.4f}'.format(best_score_based_on_valid), color='k', linestyle=':')
     title = '{0} vs epoch number for all classes\n'.format(metric)
     xlabel = 'epoch number'
     ylabel = metric
@@ -133,14 +137,15 @@ def plot_f1_vs_epoch(results, stats_graph_folder, metric, parameters, from_json=
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(handles=plot_handles, loc=0)
-    plt.savefig(os.path.join(stats_graph_folder, '{0}_vs_epoch_for_all_classes.{1}'.format(metric, parameters['plot_format'])))
+    plt.savefig(os.path.join(stats_graph_folder,
+        '{0}_vs_epoch_for_all_classes.{1}'.format(metric, parameters['plot_format'])))
     plt.close()
 
 
 def result_to_plot(folder_name=None):
     '''
-    Loads results.json file in the ../stats_graphs/folder_name, and plot f1 vs epoch.
-    Use for debugging purposes, or in case the program stopped due to error in plot_f1_vs_epoch.
+        Loads results.json file in the ../stats_graphs/folder_name, and plot f1 vs epoch.
+        Use for debugging purposes, or in case the program stopped due to error in plot_f1_vs_epoch.
     '''
     stats_graph_folder = os.path.join('..', 'stats_graphs')
     if folder_name is None:
@@ -271,13 +276,17 @@ def evaluate_model(results, dataset, y_pred_all, y_true_all, stats_graph_folder,
         conll_parsed_output = utils_nlp.get_parsed_conll_output(conll_output_filepath)
         results['epoch'][epoch_number][0][dataset_type]['conll'] = conll_parsed_output
         results['epoch'][epoch_number][0][dataset_type]['f1_conll'] = {}
-        results['epoch'][epoch_number][0][dataset_type]['f1_conll']['micro'] = results['epoch'][epoch_number][0][dataset_type]['conll']['all']['f1']
+        results['epoch'][epoch_number][0][dataset_type]['f1_conll']['micro'] = \
+            results['epoch'][epoch_number][0][dataset_type]['conll']['all']['f1']
         if parameters['main_evaluation_mode'] == 'conll':
             results['epoch'][epoch_number][0][dataset_type]['f1_score'] = {}
-            results['epoch'][epoch_number][0][dataset_type]['f1_score']['micro'] = results['epoch'][epoch_number][0][dataset_type]['conll']['all']['f1']
-            results['epoch'][epoch_number][0][dataset_type]['accuracy_score'] = results['epoch'][epoch_number][0][dataset_type]['conll']['all']['accuracy']
+            results['epoch'][epoch_number][0][dataset_type]['f1_score']['micro'] = \
+                results['epoch'][epoch_number][0][dataset_type]['conll']['all']['f1']
+            results['epoch'][epoch_number][0][dataset_type]['accuracy_score'] = \
+                results['epoch'][epoch_number][0][dataset_type]['conll']['all']['accuracy']
             utils_plots.plot_classification_report(results['epoch'][epoch_number][0][dataset_type]['conll'],
-                title='Classification report for epoch {0} in {1} ({2} evaluation)\n'.format(epoch_number, dataset_type, 'conll'),
+                title='Classification report for epoch {0} in {1} ({2} evaluation)\n'.format(
+                        epoch_number, dataset_type, 'conll'),
                 cmap='RdBu', from_conll_json=True)
             plt.savefig(os.path.join(stats_graph_folder,
                        'classification_report_for_epoch_{0:04d}_in_{1}_conll_evaluation.{3}'.format(epoch_number,

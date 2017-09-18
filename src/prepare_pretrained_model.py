@@ -20,12 +20,13 @@ def trim_dataset_pickle(input_dataset_filepath, output_dataset_filepath=None, de
         If delete_token_mappings = True, then also remove token_to_index and index_to_token except for UNK.
     '''
     print("Trimming dataset.pickle..")
-    if output_dataset_filepath == None:
+    if output_dataset_filepath is None:
         output_dataset_filepath = os.path.join(os.path.dirname(input_dataset_filepath), 'dataset_trimmed.pickle')
     dataset = pickle.load(open(input_dataset_filepath, 'rb'))
     count = 0
     print("Keys removed:")
-    keys_to_remove = ['character_indices', 'character_indices_padded', 'characters', 'label_indices', 'label_vector_indices', 'labels',
+    keys_to_remove = ['character_indices', 'character_indices_padded', 'characters', 'label_indices',
+                      'label_vector_indices', 'labels',
                       'token_indices', 'token_lengths', 'tokens', 'infrequent_token_indices', 'tokens_mapped_to_unk']
     for key in keys_to_remove:
         if key in dataset.__dict__:
@@ -33,8 +34,8 @@ def trim_dataset_pickle(input_dataset_filepath, output_dataset_filepath=None, de
             print('\t' + key)
             count += 1
     if delete_token_mappings:
-        dataset.__dict__['token_to_index'] = {dataset.__dict__['UNK']:dataset.__dict__['UNK_TOKEN_INDEX']}
-        dataset.__dict__['index_to_token'] = {dataset.__dict__['UNK_TOKEN_INDEX']:dataset.__dict__['UNK']}
+        dataset.__dict__['token_to_index'] = {dataset.__dict__['UNK']: dataset.__dict__['UNK_TOKEN_INDEX']}
+        dataset.__dict__['index_to_token'] = {dataset.__dict__['UNK_TOKEN_INDEX']: dataset.__dict__['UNK']}
     print("Number of keys removed: {0}".format(count))
     pprint(dataset.__dict__)
     pickle.dump(dataset, open(output_dataset_filepath, 'wb'))
@@ -59,7 +60,8 @@ def trim_model_checkpoint(parameters_filepath, dataset_filepath, input_checkpoin
         token_embedding_weights = sess.run(model.token_embedding_weights)
 
         # Restore the sizes of token embedding weights
-        utils_tf.resize_tensor_variable(sess, model.token_embedding_weights, [1, parameters['token_embedding_dimension']])
+        utils_tf.resize_tensor_variable(sess, model.token_embedding_weights,
+            [1, parameters['token_embedding_dimension']])
 
         initial_weights = sess.run(model.token_embedding_weights)
         initial_weights[dataset.UNK_TOKEN_INDEX] = token_embedding_weights[dataset.UNK_TOKEN_INDEX]
@@ -78,18 +80,23 @@ def trim_model_checkpoint(parameters_filepath, dataset_filepath, input_checkpoin
 def prepare_pretrained_model_for_restoring(output_folder_name, epoch_number, model_name,
                                            delete_token_mappings=False):
     '''
-    Copy the dataset.pickle, parameters.ini, and model checkpoint files after removing the data used for training.
+        Copy the dataset.pickle, parameters.ini, and model checkpoint files after removing the data used for training.
 
-    The dataset and labels are deleted from dataset.pickle by default. The only information about the dataset that remain in the pretrained model
-    is the list of tokens that appears in the dataset and the corresponding token embeddings learned from the dataset.
+        The dataset and labels are deleted from dataset.pickle by default. The only information about the dataset that r
+        emain in the pretrained model
+        is the list of tokens that appears in the dataset and the corresponding token embeddings learned from the dataset.
 
-    If delete_token_mappings is set to True, index_to_token and token_to_index mappings are deleted from dataset.pickle additionally,
-    and the corresponding token embeddings are deleted from the model checkpoint files. In this case, the pretrained model would not contain
-    any information about the dataset used for training the model.
+        If delete_token_mappings is set to True, index_to_token and token_to_index mappings are deleted from
+        dataset.pickle additionally,
+        and the corresponding token embeddings are deleted from the model checkpoint files. In this case, the pretrained
+        model would not contain
+        any information about the dataset used for training the model.
 
-    If you wish to share a pretrained model with delete_token_mappings = True, it is highly recommended to use some external pre-trained token
-    embeddings and freeze them while training the model to obtain high performance. This can be done by specifying the token_pretrained_embedding_filepath
-    and setting freeze_token_embeddings = True in parameters.ini for training.
+        If you wish to share a pretrained model with delete_token_mappings = True, it is highly recommended to use
+        some external pre-trained token
+        embeddings and freeze them while training the model to obtain high performance. This can be done by specifying
+        the token_pretrained_embedding_filepath
+        and setting freeze_token_embeddings = True in parameters.ini for training.
     '''
     input_model_folder = os.path.join('..', 'output', output_folder_name, 'model')
     output_model_folder = os.path.join('..', 'trained_models', model_name)
@@ -117,8 +124,8 @@ def prepare_pretrained_model_for_restoring(output_folder_name, epoch_number, mod
 
 def check_contents_of_dataset_and_model_checkpoint(model_folder):
     '''
-    Check the contents of dataset.pickle and model_xxx.ckpt.
-    model_folder: folder containing dataset.pickle and model_xxx.ckpt to be checked.
+        Check the contents of dataset.pickle and model_xxx.ckpt.
+        model_folder: folder containing dataset.pickle and model_xxx.ckpt to be checked.
     '''
     dataset_filepath = os.path.join(model_folder, 'dataset.pickle')
     dataset = pickle.load(open(dataset_filepath, 'rb'))
@@ -127,8 +134,10 @@ def check_contents_of_dataset_and_model_checkpoint(model_folder):
 
     checkpoint_filepath = os.path.join(model_folder, 'model.ckpt')
     with tf.Session() as sess:
-        print_tensors_in_checkpoint_file(checkpoint_filepath, tensor_name='token_embedding/token_embedding_weights', all_tensors=True)
-        print_tensors_in_checkpoint_file(checkpoint_filepath, tensor_name='token_embedding/token_embedding_weights', all_tensors=False)
+        print_tensors_in_checkpoint_file(checkpoint_filepath, tensor_name='token_embedding/token_embedding_weights',
+            all_tensors=True)
+        print_tensors_in_checkpoint_file(checkpoint_filepath, tensor_name='token_embedding/token_embedding_weights',
+            all_tensors=False)
 
 
 if __name__ == '__main__':

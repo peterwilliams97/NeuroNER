@@ -1,9 +1,9 @@
 '''
-To run:
-CUDA_VISIBLE_DEVICES="" python3.5 main.py &
-CUDA_VISIBLE_DEVICES=1 python3.5 main.py &
-CUDA_VISIBLE_DEVICES=2 python3.5 main.py &
-CUDA_VISIBLE_DEVICES=3 python3.5 main.py &
+    To run:
+        CUDA_VISIBLE_DEVICES="" python3.5 main.py &
+        CUDA_VISIBLE_DEVICES=1 python3.5 main.py &
+        CUDA_VISIBLE_DEVICES=2 python3.5 main.py &
+        CUDA_VISIBLE_DEVICES=3 python3.5 main.py &
 '''
 from __future__ import print_function
 import os
@@ -11,24 +11,20 @@ import argparse
 from argparse import RawTextHelpFormatter
 import sys
 from neuroner import NeuroNER
-import tensorflow as tf
+
 import warnings
-matplotlib.use('Agg')
-import matplotlib
+
 
 # http://stackoverflow.com/questions/42217532/tensorflow-version-1-0-0-rc2-on-windows-opkernel-op-bestsplits-device-typ
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-print('NeuroNER version: {0}'.format('1.0-dev'))
-print('TensorFlow version: {0}'.format(tf.__version__))
 
 warnings.filterwarnings('ignore')
 
 
 def load_parameters(parameters_filepath, arguments={}, verbose=True):
     '''
-      Load parameters from the ini file if specified, take into account any command line argument,
-      and ensure that each parameter is cast to the correct type.
-      Command line arguments take precedence over parameters specified in the parameter file.
+        Load parameters from the ini file if specified, take into account any command line argument,
+        and ensure that each parameter is cast to the correct type.
+        Command line arguments take precedence over parameters specified in the parameter file.
     '''
     parameters = {'pretrained_model_folder': '../trained_models/conll_2003_en',
                   'dataset_text_folder': '../data/conll2003/en',
@@ -94,7 +90,7 @@ def load_parameters(parameters_filepath, arguments={}, verbose=True):
                  'maximum_training_time',
                  'number_of_cpu_threads', 'number_of_gpus'}:
             parameters[k] = int(v)
-        elif k in ['dropout_rate', 'learning_rate', 'gradient_clipping_value']:
+        elif k in {'dropout_rate', 'learning_rate', 'gradient_clipping_value'}:
             parameters[k] = float(v)
         elif k in {'remap_unknown_tokens_to_unk', 'use_character_lstm', 'use_crf', 'train_model',
                    'use_pretrained_model', 'debug', 'verbose',
@@ -158,7 +154,7 @@ def get_valid_dataset_filepaths(parameters):
         else:
             # Brat text files exist
             if (os.path.exists(dataset_brat_folders[dataset_type]) and
-                len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
+                    len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
                 dataset_filepath_for_tokenizer = os.path.join(parameters['dataset_text_folder'],
                     '{0}_{1}.txt'.format(dataset_type, parameters['tokenizer']))
                 if os.path.exists(dataset_filepath_for_tokenizer):
@@ -271,7 +267,8 @@ def parse_arguments(arguments=None):
         parser.print_help()
         sys.exit(0)
 
-    arguments = vars(arguments)  # http://stackoverflow.com/questions/16878315/what-is-the-right-way-to-treat-python-argparse-namespace-as-a-dictionary
+    # http://stackoverflow.com/questions/16878315/what-is-the-right-way-to-treat-python-argparse-namespace-as-a-dictionary
+    arguments = vars(arguments)
     arguments['argument_default_value'] = argument_default_value
     return arguments
 
