@@ -65,7 +65,9 @@ def check_compatibility_between_conll_and_brat_text(conll_filepath, brat_folder)
 
     '''
     dataset_type = utils.get_basename_without_extension(conll_filepath)
-    print("Checking compatibility between CONLL and BRAT for {0} set ... ".format(dataset_type), end='')
+    print("Checking compatibility between CONLL and BRAT for {0} set ... ".format(dataset_type),
+           end='')
+    print('**** conll_filepath=%s' % conll_filepath)
     conll_file = codecs.open(conll_filepath, 'r', 'UTF-8')
 
     previous_filename = ''
@@ -79,8 +81,12 @@ def check_compatibility_between_conll_and_brat_text(conll_filepath, brat_folder)
         # New file
         if filename != previous_filename:
             text_filepath = os.path.join(brat_folder, '{0}.txt'.format(filename))
-            with codecs.open(text_filepath, 'r', 'UTF-8') as f:
-                text = f.read()
+            try:
+                text = utils.read_file(text_filepath)
+            except:
+                print('$' * 80)
+                print(line)
+                raise
             previous_filename = filename
 
         label = str(line[-1]).replace('_', '-')  # For LOCATION-OTHER
@@ -140,10 +146,13 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
 
     # if brat_original_folder does not exist or have any text file
     if not os.path.exists(brat_original_folder) or len(glob.glob(os.path.join(brat_original_folder, '*.txt'))) == 0:
-        assert(conll_input_filepath != conll_output_filepath)
-        generate_reference_text_file_for_conll(conll_input_filepath, conll_output_filepath, brat_original_folder)
+        assert conll_input_filepath != conll_output_filepath
+        generate_reference_text_file_for_conll(conll_input_filepath, conll_output_filepath,
+            brat_original_folder)
 
     utils.create_folder_if_not_exists(brat_output_folder)
+    print('conll_input_filepath=%s' % conll_input_filepath)
+    print('conll_output_filepath=%s' % conll_output_filepath)
     conll_file = codecs.open(conll_output_filepath, 'r', 'UTF-8')
 
     previous_token_label = 'O'
@@ -170,10 +179,11 @@ def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_fol
         filename = str(line[1])
         # New file
         if filename != previous_filename:
-            output_entities(brat_output_folder, previous_filename, entities, text_filepath, text, overwrite=overwrite)
+            output_entities(brat_output_folder, previous_filename, entities, text_filepath,
+                text, overwrite=overwrite)
             text_filepath = os.path.join(brat_original_folder, '{0}.txt'.format(filename))
-            with codecs.open(text_filepath, 'r', 'UTF-8') as f:
-                text = f.read()
+            text = utils.read_file(text_filepath)
+
             previous_token_label = 'O'
             previous_filename = filename
             entity_id = 1

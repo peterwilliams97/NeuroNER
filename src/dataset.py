@@ -46,7 +46,10 @@ class Dataset(object):
         new_token_sequence = []
         new_label_sequence = []
         if dataset_filepath:
+            print('!!!! dataset_filepath=%s' % dataset_filepath)
+            assert os.path.exists(dataset_filepath)
             f = codecs.open(dataset_filepath, 'r', 'UTF-8')
+
             for line in f:
                 line_count += 1
                 line = line.strip().split(' ')
@@ -117,7 +120,7 @@ class Dataset(object):
 
         if self.verbose:
             try:
-                for key in 'train', 'test', 'deploy':
+                for key in 'train', 'test', 'valid', 'deploy':
                     if key not in token_lengths or not token_lengths[key]:
                         continue
                     print('=' * 80)
@@ -181,10 +184,11 @@ class Dataset(object):
             dataset_filepaths : dictionary with keys 'train', 'valid', 'test', 'deploy'
         '''
         start_time = time.time()
+
         print('Load dataset... ', end='', flush=True)
         if parameters['token_pretrained_embedding_filepath'] != '':
             parameters['token_pretrained_embedding_filepath'] = to_real_path(
-                parameters['token_pretrained_embedding_filepath'])
+                    parameters['token_pretrained_embedding_filepath'])
             if token_to_vector is None:
                 token_to_vector = utils_nlp.load_pretrained_token_embeddings(parameters)
         else:
@@ -274,6 +278,7 @@ class Dataset(object):
         if self.verbose:
             print("parameters['remap_unknown_tokens_to_unk']: {0}".format(parameters['remap_unknown_tokens_to_unk']))
             print("len(token_count['train'].keys()): {0}".format(len(token_count['train'].keys())))
+
         for token, count in token_count['all'].items():
             if iteration_number == self.UNK_TOKEN_INDEX:
                 iteration_number += 1

@@ -119,19 +119,21 @@ def get_valid_dataset_filepaths(parameters):
     dataset_filepaths = {}
     dataset_brat_folders = {}
 
-    print('dataset_text_folder="%s"' % parameters['dataset_text_folder'])
+    print('!!!!dataset_text_folder="%s"' % parameters['dataset_text_folder'])
     assert os.path.exists(parameters['dataset_text_folder']), parameters['dataset_text_folder']
 
     for dataset_type in ['train', 'valid', 'test', 'deploy']:
+        print('###', dataset_type)
         dataset_filepaths[dataset_type] = os.path.join(parameters['dataset_text_folder'],
-                                                       '{0}.txt'.format(dataset_type))
+                '{0}.txt'.format(dataset_type))
         dataset_brat_folders[dataset_type] = os.path.join(parameters['dataset_text_folder'], dataset_type)
         dataset_compatible_with_brat_filepath = os.path.join(parameters['dataset_text_folder'],
-                                                             '{0}_compatible_with_brat.txt'.format(dataset_type))
+                '{0}_compatible_with_brat.txt'.format(dataset_type))
 
         # Conll file exists
         if os.path.isfile(dataset_filepaths[dataset_type]) and os.path.getsize(dataset_filepaths[dataset_type]) > 0:
             # Brat text files exist
+            print('### 1')
             if (os.path.exists(dataset_brat_folders[dataset_type]) and
                   len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
 
@@ -144,15 +146,17 @@ def get_valid_dataset_filepaths(parameters):
 
             # Brat text files do not exist
             else:
-
+                print('### 2')
                 # Populate brat text and annotation files based on conll file
-                conll_to_brat.conll_to_brat(dataset_filepaths[dataset_type], dataset_compatible_with_brat_filepath,
-                    dataset_brat_folders[dataset_type], dataset_brat_folders[dataset_type])
+                conll_to_brat.conll_to_brat(dataset_filepaths[dataset_type],
+                        dataset_compatible_with_brat_filepath,
+                        dataset_brat_folders[dataset_type], dataset_brat_folders[dataset_type])
                 dataset_filepaths[dataset_type] = dataset_compatible_with_brat_filepath
 
         # Conll file does not exist
         else:
             # Brat text files exist
+            print('### 3')
             if (os.path.exists(dataset_brat_folders[dataset_type]) and
                     len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
                 dataset_filepath_for_tokenizer = os.path.join(parameters['dataset_text_folder'],
@@ -168,6 +172,7 @@ def get_valid_dataset_filepaths(parameters):
 
             # Brat text files do not exist
             else:
+                print('### 4')
                 del dataset_filepaths[dataset_type]
                 del dataset_brat_folders[dataset_type]
                 continue

@@ -169,7 +169,7 @@ class NeuroNER(object):
                     if os.path.exists(dataset_compatible_with_brat_filepath):
                         dataset_filepaths[dataset_type] = dataset_compatible_with_brat_filepath
                     conll_to_brat.check_compatibility_between_conll_and_brat_text(dataset_filepaths[dataset_type],
-                        dataset_brat_folders[dataset_type])
+                            dataset_brat_folders[dataset_type])
 
                 # Brat text files do not exist
                 else:
@@ -201,7 +201,7 @@ class NeuroNER(object):
                 else:
                     del dataset_filepaths[dataset_type]
                     del dataset_brat_folders[dataset_type]
-                    # assert False, '!@#$ 1'
+                    print('!@#$ 1',dataset_type)
                     continue
 
             if parameters['tagging_format'] == 'bioes':
@@ -235,8 +235,8 @@ class NeuroNER(object):
                                                 'reload_token_embeddings', 'reload_token_lstm', 'reload_feedforward',
                                                 'reload_crf']]):
                 raise ValueError('If use_pretrained_model is set to True, at least one of '
-                                 'reload_character_embeddings, reload_character_lstm, reload_token_embeddings,'
-                                 ' reload_token_lstm, reload_feedforward, reload_crf must be set to True.')
+                                 'reload_character_embeddings, reload_character_lstm, reload_token_embeddings, '
+                                 'reload_token_lstm, reload_feedforward, reload_crf must be set to True.')
 
         if parameters['gradient_clipping_value'] < 0:
             parameters['gradient_clipping_value'] = abs(parameters['gradient_clipping_value'])
@@ -289,13 +289,15 @@ class NeuroNER(object):
         arguments = {k: str(v) for k, v in locals().items() if k != 'self'}
 
         # Initialize parameters
-        parameters, conf_parameters = self._load_parameters(arguments['parameters_filepath'], arguments=arguments)
+        parameters, conf_parameters = self._load_parameters(arguments['parameters_filepath'],
+                arguments=arguments)
         dataset_filepaths, dataset_brat_folders = self._get_valid_dataset_filepaths(parameters)
         self._check_parameter_compatiblity(parameters, dataset_filepaths)
+        print('dataset_filepaths=%s' % dataset_filepaths)
 
         # Load dataset
         dataset = ds.Dataset(verbose=parameters['verbose'], debug=parameters['debug'])
-        token_to_vector = dataset.load_dataset(dataset_filepaths, parameters)
+        token_to_vector = dataset.load_dataset(dataset_filepaths, parameters)  # !@#$
 
         # Launch session
         session_conf = tf.ConfigProto(
@@ -320,6 +322,8 @@ class NeuroNER(object):
                 self.transition_params_trained = np.random.rand(len(dataset.unique_labels) + 2,
                     len(dataset.unique_labels) + 2)
             else:
+                print('@@@', len(dataset.token_to_index),
+                    sorted(dataset.token_to_index, key=lambda x: (len(x), x))[:100])
                 self.transition_params_trained = model.restore_from_pretrained_model(parameters,
                     dataset, sess, token_to_vector=token_to_vector)
             del token_to_vector
@@ -516,14 +520,16 @@ class NeuroNER(object):
                      self.transition_params_trained, self.stats_graph_folder, self.prediction_count,
                      self.parameters, self.dataset_filepaths)
         _, _, output_filepaths[dataset_type] = prediction_output
-        conll_to_brat.output_brat(output_filepaths, self.dataset_brat_folders, self.stats_graph_folder, overwrite=True)
+        conll_to_brat.output_brat(output_filepaths, self.dataset_brat_folders, self.stats_graph_folder,
+                overwrite=True)
 
         # Print and output result
         text_filepath = os.path.join(self.stats_graph_folder, 'brat', 'deploy',
             os.path.basename(dataset_brat_deploy_filepath))
         annotation_filepath = os.path.join(self.stats_graph_folder, 'brat', 'deploy',
             '{0}.ann'.format(utils.get_basename_without_extension(dataset_brat_deploy_filepath)))
-        text2, entities = brat_to_conll.get_entities_from_brat(text_filepath, annotation_filepath, verbose=True)
+        text2, entities = brat_to_conll.get_entities_from_brat(text_filepath, annotation_filepath,
+                verbose=True)
         assert(text == text2)
         return entities
 

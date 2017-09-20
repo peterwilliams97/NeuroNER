@@ -7,6 +7,7 @@ import os
 import time
 import datetime
 import shutil
+import codecs
 
 
 def order_dictionary(dictionary, mode, reverse=False):
@@ -79,7 +80,7 @@ def get_basename_without_extension(filepath):
 
 def create_folder_if_not_exists(directory):
     '''
-    Create the folder if it doesn't exist already.
+        Create the folder if it doesn't exist already.
     '''
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -87,7 +88,7 @@ def create_folder_if_not_exists(directory):
 
 def get_current_milliseconds():
     '''
-    http://stackoverflow.com/questions/5998245/get-current-time-in-milliseconds-in-python
+        http://stackoverflow.com/questions/5998245/get-current-time-in-milliseconds-in-python
     '''
     return(int(round(time.time() * 1000)))
 
@@ -133,3 +134,24 @@ def copytree(src, dst, symlinks=False, ignore=None):
             shutil.copytree(s, d, symlinks, ignore)
         else:
             shutil.copy2(s, d)
+
+
+def read_file(text_filepath):
+    assert os.path.exists(text_filepath), text_filepath
+    try:
+        with codecs.open(text_filepath, 'r', 'UTF-8') as f:
+            text = f.read()
+    except UnicodeDecodeError:
+        try:
+            with codecs.open(text_filepath, 'r', 'latin-1') as f:
+                text = f.read()
+        except:
+            print('^' * 80)
+            print(text_filepath)
+            raise
+    return text
+
+
+def write_file(text_filepath, text):
+    with codecs.open(text_filepath, 'w', 'UTF-8') as f:
+        f.write(text)

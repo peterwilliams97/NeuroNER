@@ -6,6 +6,7 @@ import spacy
 import utils_nlp
 import json
 from pycorenlp import StanfordCoreNLP
+import utils
 
 
 def get_start_and_end_offset_of_token_from_spacy(token):
@@ -72,12 +73,9 @@ def get_sentences_and_tokens_from_stanford(text, core_nlp):
 
 def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
     # load text
-    try:
-        with codecs.open(text_filepath, 'r', 'UTF-8') as f:
-            text = f.read()
-    except UnicodeDecodeError:
-        print('text_filepath=%s' % text_filepath)
-        raise
+
+    text = utils.read_file(text_filepath)
+
     if verbose:
         pprint("\ntext:\n{0}\n".format(text))
 
@@ -165,12 +163,11 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
             for token in sentence:
                 token['label'] = 'O'
                 for entity in entities:
-                    if entity['start'] <= token['start'] < entity['end'] or \
-                       entity['start'] < token['end'] <= entity['end'] or \
-                       token['start'] < entity['start'] < entity['end'] < token['end']:
-
-                        token['label'] = entity['type'].replace('-', '_') # Because the ANN doesn't support tag with '-' in it
-
+                    if (entity['start'] <= token['start'] < entity['end'] or
+                            entity['start'] < token['end'] <= entity['end'] or
+                            token['start'] < entity['start'] < entity['end'] < token['end']):
+                        # Because the ANN doesn't support tag with '-' in it
+                        token['label'] = entity['type'].replace('-', '_')
                         break
                     elif token['end'] < entity['start']:
                         break
