@@ -72,8 +72,12 @@ def get_sentences_and_tokens_from_stanford(text, core_nlp):
 
 def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
     # load text
-    with codecs.open(text_filepath, 'r', 'UTF-8') as f:
-        text = f.read()
+    try:
+        with codecs.open(text_filepath, 'r', 'UTF-8') as f:
+            text = f.read()
+    except UnicodeDecodeError:
+        print('text_filepath=%s' % text_filepath)
+        raise
     if verbose:
         pprint("\ntext:\n{0}\n".format(text))
 

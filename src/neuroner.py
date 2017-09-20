@@ -1,6 +1,5 @@
 import matplotlib
 matplotlib.use('Agg')
-import sys
 import train
 import dataset as ds
 import tensorflow as tf
@@ -318,9 +317,11 @@ class NeuroNER(object):
             sess.run(tf.global_variables_initializer())
             if not parameters['use_pretrained_model']:
                 model.load_pretrained_token_embeddings(sess, dataset, parameters, token_to_vector)
-                self.transition_params_trained = np.random.rand(len(dataset.unique_labels)+2,len(dataset.unique_labels)+2)
+                self.transition_params_trained = np.random.rand(len(dataset.unique_labels) + 2,
+                    len(dataset.unique_labels) + 2)
             else:
-                self.transition_params_trained = model.restore_from_pretrained_model(parameters, dataset, sess, token_to_vector=token_to_vector)
+                self.transition_params_trained = model.restore_from_pretrained_model(parameters,
+                    dataset, sess, token_to_vector=token_to_vector)
             del token_to_vector
 
         self.dataset = dataset
@@ -479,6 +480,7 @@ class NeuroNER(object):
             writers[dataset_type].close()
 
     def predict(self, text):
+        assert False
         self.prediction_count += 1
 
         if self.prediction_count == 1:

@@ -26,7 +26,6 @@ if False:
     assert False
 
 
-
 class Dataset(object):
     """A class for handling data sets."""
 
@@ -62,7 +61,6 @@ class Dataset(object):
                 label = str(line[-1])
                 token_count[token] += 1
                 label_count[label] += 1
-
 
                 new_token_sequence.append(token)
                 new_label_sequence.append(label)
@@ -118,14 +116,28 @@ class Dataset(object):
                 label_indices[dataset_type].append([label_to_index[label] for label in label_sequence])
 
         if self.verbose:
-            print('token_lengths[\'train\'][0][0:10]: {0}'.format(token_lengths['train'][0][0:10]))
-            print('characters[\'train\'][0][0:10]: {0}'.format(characters['train'][0][0:10]))
-            print('token_indices[\'train\'][0:10]: {0}'.format(token_indices['train'][0:10]))
-            print('label_indices[\'train\'][0:10]: {0}'.format(label_indices['train'][0:10]))
-            print('character_indices[\'train\'][0][0:10]: {0}'.format(character_indices['train'][0][0:10]))
-            # Vectorize the labels
-            print('character_indices_padded[\'train\'][0][0:10]: {0}'.format(
-                character_indices_padded['train'][0][0:10]))
+            try:
+                for key in 'train', 'test', 'deploy':
+                    if key not in token_lengths or not token_lengths[key]:
+                        continue
+                    print('=' * 80)
+                    print('token_lengths[{\'{1}\'}][0][0:10]: {0}'.format(token_lengths[key][0][0:10], key))
+                    print('   characters[\'{1}\'][0][0:10]: {0}'.format(characters[key][0][0:10], key))
+                    print('token_indices[\'{1}\'][0:10]: {0}'.format(token_indices[key][0:10], key))
+                    print('label_indices[\'{1}\'][0:10]: {0}'.format(label_indices[key][0:10], key))
+                    print('character_indices[\'{1}\'][0][0:10]: {0}'.format(character_indices[key][0][0:10], key))
+                    # Vectorize the labels
+                    print('character_indices_padded[\'{1}\'][0][0:10]: {0}'.format(
+                           character_indices_padded[key][0][0:10], key))
+                    print('.' * 80)
+            except:
+                print('^' * 80)
+                print('token_lengths: %d %s' % (len(token_lengths), sorted(token_lengths)))
+                print('   characters: %d %s' % (len(characters), sorted(characters)))
+                print('token_indices: %d %s' % (len(token_indices), sorted(token_indices)))
+                print('label_indices: %d %s' % (len(label_indices), sorted(label_indices)))
+                print('character_indices: %d %s' % (len(character_indices), sorted(character_indices)))
+                raise
 
         # [Numpy 1-hot array](http://stackoverflow.com/a/42263603/395857)
         label_binarizer = sklearn.preprocessing.LabelBinarizer()
@@ -136,9 +148,9 @@ class Dataset(object):
             for label_indices_sequence in label_indices[dataset_type]:
                 label_vector_indices[dataset_type].append(label_binarizer.transform(label_indices_sequence))
 
-        if self.verbose:
-            print('label_vector_indices[\'train\'][0:2]: {0}'.format(label_vector_indices['train'][0:2]))
-            print('len(label_vector_indices[\'train\']): {0}'.format(len(label_vector_indices['train'])))
+        # if self.verbose:
+        #     print('label_vector_indices[\'train\'][0:2]: {0}'.format(label_vector_indices['train'][0:2]))
+        #     print('len(label_vector_indices[\'train\']): {0}'.format(len(label_vector_indices['train'])))
 
         return (token_indices, label_indices, character_indices_padded, character_indices, token_lengths,
             characters, label_vector_indices)
