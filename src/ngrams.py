@@ -87,7 +87,7 @@ def datafile(name, sep='\t'):
 
 def avoid_long_words(key, N):
     "Estimate the probability of an unknown word."
-    return 10. / (N * 10**len(key))
+    return 10. / (N * 20**len(key))
 
 
 N = 1024908267229  # Number of tokens
@@ -167,21 +167,35 @@ def score(cpts, verbose=False):
     # return sum(log10(cPw(first, prev)) for prev, first in zip(cpts[:-1], cpts[1:]))
 
 
+def rank_score(ranks):
+    return -sum([2** (-i) for i in ranks]) / len(ranks)
+
+
 def best_cpt_join(cpts):
     # print('best_cpt_join', len(cpts), cpts)
+
     joins = cpt_joins(cpts)
+
+    # words = {w for cpt in joins for w in cpt}
+    # word_prob = {w: log10(Pw(w)) for w in words}
+    # probs = set(word_prob.values())
+    # prob_rank_pairs = sorted((p, i) for i, p in enumerate(probs))
+    # prob_rank = {p: i for p, i in prob_rank_pairs}
+    # word_rank = {w: prob_rank[p] for w, p in word_prob.items()}
+    # score_joins = [(rank_score([word_rank[w] for w in cpt]), cpt) for cpt in joins]
+
     score_joins = [(score(cpt), cpt) for cpt in joins]
     # for i, (scr, cpt) in enumerate(sorted(score_joins, reverse=True)):
     #     print('%3d: %10g: %s' % (i, scr, cpt))
 
     ret = max(score_joins)[1]
-    if 'winstead' in ret:
-        print('-' * 80)
-        print(cpts)
-        for i, ((scr_min, scr_ave), cpt) in enumerate(sorted(score_joins, reverse=True)):
-            score(cpt, verbose=True)
-            print('%3d: %10g %10g: %s' % (i, scr_min, scr_ave, cpt))
-        assert False
+    # if 'winstead' in ret:
+    #     print('-' * 80)
+    #     print(cpts)
+    #     for i, (scr, cpt) in enumerate(sorted(score_joins, reverse=True)):
+    #         score(cpt, verbose=True)
+    #         print('%3d: %10g %10g: %s' % (i, scr[0], scr[1], cpt))
+    #     assert False
     return ret
 
 
@@ -218,11 +232,11 @@ if True:
     cpts = ['a', 'nd', 'th', 'e', 'm']
     text = ('''Reducing p rinting by finding c lasses of documents t hat should not be p rinted or could be '''
          +  '''printed d ifferently double s ided t wo p ages p er sheet b w i nstead o f colour ''')
-    text = text * 2
+    text = text * 10
     cpts = text.split()[:]
     # ret = cpt_joins(cpts)
     # ret = best_cpt_join(cpts)
-    for L in range(2, 6):
+    for L in range(3, 8):
         ret = segment_cpts_recursive(cpts, L)
         print(L, len(ret), ret[:30])
     assert False
