@@ -155,10 +155,12 @@ def cpt_joins(cpts):
     return joins
 
 
-def score(cpts, verbose=False):
+def score(cpts, do_mean, verbose=False):
     probs = [log10(Pw(c)) for c in cpts]
     if verbose:
         print([(l, c) for l, c in zip(probs, cpts)])
+    if do_mean:
+        return min(probs), sum(probs) / len(probs)
     return min(probs), sum(probs)
     # if len(cpts) == 1:
     #     # assert False, cpts
@@ -171,7 +173,7 @@ def rank_score(ranks):
     return -sum([2** (-i) for i in ranks]) / len(ranks)
 
 
-def best_cpt_join(cpts):
+def best_cpt_join(cpts, do_mean):
     # print('best_cpt_join', len(cpts), cpts)
 
     joins = cpt_joins(cpts)
@@ -184,7 +186,7 @@ def best_cpt_join(cpts):
     # word_rank = {w: prob_rank[p] for w, p in word_prob.items()}
     # score_joins = [(rank_score([word_rank[w] for w in cpt]), cpt) for cpt in joins]
 
-    score_joins = [(score(cpt), cpt) for cpt in joins]
+    score_joins = [(score(cpt, do_mean), cpt) for cpt in joins]
     # for i, (scr, cpt) in enumerate(sorted(score_joins, reverse=True)):
     #     print('%3d: %10g: %s' % (i, scr, cpt))
 
@@ -199,8 +201,9 @@ def best_cpt_join(cpts):
     return ret
 
 
-def segment_cpts_recursive(cpts, L=5):
+def segment_cpts_recursive(cpts, L=5, do_mean=False):
     "Return (log P(words), words), where words is the best segmentation."
+    assert isinstance(cpts, list), type(cpts)
 
     L = min(len(cpts) - 1, L)
 
@@ -209,7 +212,7 @@ def segment_cpts_recursive(cpts, L=5):
     cpts_new = []
     while i <= len(cpts) - L:
         n = len(cpts)
-        cpts1 = best_cpt_join(cpts[i:i + L])
+        cpts1 = best_cpt_join(cpts[i:i + L], do_mean=do_mean)
         cpts = cpts[:i] + cpts1 + cpts[i + L:]
         # print(cpts1)
         # print('%3d: %10g: %s' % (i, score(cpts), cpts[max(i - L, 0): i + L]))
@@ -228,7 +231,7 @@ def segment_cpts_recursive(cpts, L=5):
     return sum(probs)
 
 
-if True:
+if False:
     cpts = ['a', 'nd', 'th', 'e', 'm']
     text = ('''Reducing p rinting by finding c lasses of documents t hat should not be p rinted or could be '''
          +  '''printed d ifferently double s ided t wo p ages p er sheet b w i nstead o f colour ''')

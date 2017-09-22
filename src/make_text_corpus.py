@@ -17,6 +17,7 @@ def run_command(cmd):
 
 def pdftotext(pdf, txt):
     cmd = ['pdftotext', pdf, txt]
+    cmd = ['java', '-jar', 'pdfbox-app-2.0.7.jar', 'ExtractText', pdf, txt]
     rc, stdout, stderr = run_command(cmd)
     if rc == 0:
         return ''
@@ -159,12 +160,142 @@ def corpus_to_text(pdf_dir, text_dir, keep_dirs=False):
 
 import utils
 import re
+from ngrams import segment2, cPw, segment_cpts, segment_cpts_recursive
 
 
+RE_WORD = re.compile(r'\w+', re.MULTILINE | re.DOTALL)
 RE_NL = re.compile(r'[\n\f\r]+', re.MULTILINE | re.DOTALL)
 RE_SPACE = re.compile(r'[\t ]+', re.MULTILINE | re.DOTALL)
 RE_SPNL = re.compile(r'[\t ]+[\n\f\r]+', re.MULTILINE | re.DOTALL)
 RE_ENDS = re.compile(r'(?:^[\n\f\r]+|[\n\f\r]+$)', re.MULTILINE | re.DOTALL)
+RE_SPACEALL = re.compile(r'\s+', re.MULTILINE | re.DOTALL)
+cat = ''.join
+
+
+def best_words(all_words, grp_ids):
+    # print('###', all_words[:5])
+    grp = [all_words[i] for i in grp_ids]
+    words = []
+    words.append(grp[0])
+    i = 1
+    while i < len(grp) - 1:
+        prev = words[-1]
+        w0 = grp[i]
+        w1 = cat([grp[i], grp[i + 1]])
+        assert isinstance(prev, str), (i, prev, w0, w1)
+        assert isinstance(w0, str), (i, prev, w0, w1)
+        assert isinstance(w1, str), (i, prev, w0, w1)
+        p0 = cPw(w0, prev)
+        p1 = cPw(w1, prev)
+        print('>>>>> %12g %12g %5s %10s | %s' % (p0, p1, p0 < p1, w0, w1))
+        if p0 >= p1:
+            words.append(w0)
+            i += 1
+        else:
+            words.append(w1)
+            i += 2
+    words.append(grp[-1])
+    return ' '.join(words)
+
+
+# Reducing printing by finding classes of documents that
+# Re ducing printingby finding classes of documents that
+
+def rebreak(orig, text):
+    "Rebreak `text` to have the breaks in orig"
+    continuous_orig = ''.join(orig.split())
+    continuous = ''.join(text.split())
+    assert continuous_orig == continuous, '\n%\n%s' % (continuous_orig, continuous)
+    n = len(continuous)
+    i0, i1 = 0, 0
+    breaks0 = set()
+    breaks1 = set()
+    for i, c in enumerate(continuous):
+        if orig[i0].isspace():
+            breaks0.add(i)
+            # print('@', i, i0)
+            i0 += 1
+        assert c == orig[i0]
+        i0 += 1
+
+        if text[i1].isspace():
+            breaks1.add(i)
+            # print('#', i, i0)
+            i1 += 1
+        assert c == text[i1]
+        i1 += 1
+
+    assert i0 == len(orig) and i1 == len(text), ((i0, len(orig)), (i1, len(text)))
+    breaks = sorted(breaks0 & breaks1)
+    print(breaks)
+    breaks = [0] + breaks + [n]
+    boundaries = [(i0, i1) for i0, i1 in zip(breaks[:-1], breaks[1:])]
+    print(boundaries)
+    parts = [continuous[i0:i1] for i0, i1 in zip(breaks[:-1], breaks[1:])]
+    return ' '.join(parts)
+
+
+if False:
+    print('=' * 80)
+    orig = 'Reducing print ing by finding classes of documents that'
+    text = 'Re ducing printing by finding classes of documents that'
+    broke = rebreak(orig, text)
+    print('-' * 80)
+    print(orig)
+    print(text)
+    print(broke)
+    print('-' * 80)
+    assert False
+
+
+def retokenize(text):
+    matches = [m for m in RE_WORD.finditer(text)]
+    words = [m.group(0) for m in matches]
+    seps = [text[m0.end():m1.start()] for m0, m1 in zip(matches[:-1], matches[1:])]
+    print('-' * 80)
+    for i in range(10):
+        print('%3d: %-20s -- %s' % (i, words[i], seps[i]))
+    n = len(seps)
+    groups = []
+    grp = []
+    for i in range(n):
+        if seps[i].isspace():
+            grp.append(i)
+        elif grp:
+            groups.append(grp)
+            grp = []
+    print('~' * 80)
+    out_parts = []
+    for i in range(n):
+        if i > 0:
+            out_parts.append(seps[i - 1])
+        # txt = ' '.join(words[i] for i in groups[i])
+        wrds = [words[j] for j in groups[i]]
+        if len(wrds) == 1:
+            out_parts.append(wrds[0])
+        else:
+            run = ''.join(wrds)
+            p2, seg2 = segment2(run)
+            seg = segment_cpts_recursive(wrds)
+            seg_a = segment_cpts_recursive(wrds, do_mean=True)
+            seg_b = segment_cpts_recursive(wrds, L=6)
+            seg = ' '.join(seg)
+            seg_a = ' '.join(seg_a)
+            seg_b = ' '.join(seg_b)
+            seg2 = ' '.join(seg2)
+            seg2b = rebreak(' '.join(wrds), seg2)
+            # wrds = best_words(words, groups[i])
+            # p, seg = 0., ''
+            if i < 5:
+                print('%3d: %s' % (i, groups[i]))
+                print('\t%10s -- %s' % ('', seg))
+                print('\t%10s -- %s' % ('', seg_a))
+                print('\t%10s -- %s' % ('', seg_b))
+                print('\t%10g -- %s' % (p2, seg2))
+                print('\t%10g -- %s' % (p2, seg2b))
+            out_parts.append(seg2b)
+
+    return ''.join(out_parts)
 
 
 def clean_file(path, path_cln, min_len=100):
@@ -180,6 +311,8 @@ def clean_file(path, path_cln, min_len=100):
         text0 = text
     text += '\n'
 
+    text = retokenize(text)
+
     # print('=' * 80)
     # print(text00[:100])
     # print('-' * 80)
@@ -188,8 +321,12 @@ def clean_file(path, path_cln, min_len=100):
         assert len(text) < len(text00), (len(text), len(text00))
     text = text[:2000]
     if len(text) >= min_len:
+        print('-' * 80)
+        print(text)
+        print('-' * 80)
         utils.write_file(path_cln, text)
         return True, len(text0), len(text)
+    assert False, ('yikes', len(text), text[:20])
     return False, 0, 0
 
 
@@ -218,6 +355,12 @@ print('text_dir=%s' % text_dir)
 print('clean_dir=%s' % clean_dir)
 
 if False:
-    corpus_to_text(pdf_dir, text_dir)
+    path = os.path.join(text_dir, '000019.txt')
+    assert os.path.exists(path), path
+    clean_file(path, 'blah.txt')
+    assert False
+
 if True:
-    clean_text_corpus(text_dir, clean_dir)
+    corpus_to_text(pdf_dir, text_dir)
+# if True:
+#     clean_text_corpus(text_dir, clean_dir)
