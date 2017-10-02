@@ -5,6 +5,8 @@ import os
 from glob import glob
 from collections import defaultdict
 import hashlib
+import shutil
+
 # from shutil import copyfile
 from subprocess import CalledProcessError, Popen, PIPE
 
@@ -15,16 +17,35 @@ def run_command(cmd):
     return p.returncode, stdout, stderr
 
 
-def pdftotext(pdf, txt):
-    cmd = ['pdftotext', pdf, txt]
-    cmd = ['java', '-jar', 'pdfbox-app-2.0.7.jar', 'ExtractText', pdf, txt]
+pdfminer = '~/pdf/pdfminer/tools/pdf2txt.py'
+pdfminer = os.path.expanduser(pdfminer)
+pdfminer = '/anaconda/bin/pdf2txt.py'
+# assert os.path.exists(pdfminer), pdfminer
+assert shutil.which('pdftotext')
+# assert shutil.which('pdfbox-app-2.0.7.jar')
+assert shutil.which('pdf2txt.py')
+
+
+def pdftotext(pdf, txt, method):
+    if method == 0:
+        cmd = ['pdftotext', pdf, txt]
+    elif method == 1:
+        cmd = ['java', '-jar', 'pdfbox-app-2.0.7.jar', 'ExtractText', pdf, txt]
+    elif method == 2:
+        cmd = ['python', pdfminer, '-o', txt, pdf]
     rc, stdout, stderr = run_command(cmd)
     if rc == 0:
         return ''
+    if stdout:
+        print('~' * 80)
+        print(str(stdout))
     if stderr:
-        print(stderr)
+        print('^' * 80)
+        print(str(stderr))
     if 'Permission Error' not in str(stderr):
-        raise CalledProcessError(rc, cmd)
+        print('-' * 80)
+        print(' '.join(cmd))
+        # raise CalledProcessError(rc, cmd)
 
 
 if False:
@@ -131,7 +152,7 @@ def corpus_to_keepers(pdf_dir):
     return keepers
 
 
-def corpus_to_text(pdf_dir, text_dir, keep_dirs=False):
+def corpus_to_text(pdf_dir, text_dir, method, keep_dirs=False):
     keepers = corpus_to_keepers(pdf_dir)
 
     os.makedirs(text_dir, exist_ok=True)
@@ -145,6 +166,13 @@ def corpus_to_text(pdf_dir, text_dir, keep_dirs=False):
 
     for i, path in enumerate(keepers):
         # if path != '/Users/pcadmin/testdata/Forerunner_230_OM_EN.pdf': continue
+        # if path in {
+        #     # 'Case_Study_-_Childrens_Medical_Group_Improving_Interoperability_Between_Practices.pdf',
+        #     '/Users/pcadmin/testdata/Case_Study_-_Childrens_Medical_Group_Improving_Interoperability_Between_Practices.pdf',
+        #     '/Users/pcadmin/testdata/Data Classification For Dummies_Identity Finder_Special Edition_Todd_Feinman.pdf',
+        #     '/Users/pcadmin/testdata/Forerunner_230_OM_EN.pdf',
+        #   }:
+        #     continue
         print('%3d: %s' % (i, path), end=' -> ')
 
         assert os.path.abspath(path) == path
@@ -153,14 +181,14 @@ def corpus_to_text(pdf_dir, text_dir, keep_dirs=False):
         # name = extract_name(path, start=pdf_dir, whole=False)
         # path_txt = os.path.join(text_dir, name)
         print(path_txt, end=' ')
-        pdftotext(path, path_txt)
+        pdftotext(path, path_txt, method)
         # copyfile(path, path_txt)
         print(flush=True)
 
 
 import utils
 import re
-from ngrams import segment2, cPw, segment_cpts, segment_cpts_recursive
+from ngrams import segment2, cPw, segment_cpts, segment_cpts_recursive, Pw
 
 
 RE_WORD = re.compile(r'\w+', re.MULTILINE | re.DOTALL)
@@ -202,7 +230,7 @@ def best_words(all_words, grp_ids):
 # Re ducing printingby finding classes of documents that
 
 def rebreak(orig, text):
-    "Rebreak `text` to have the breaks in orig"
+    """Rebreak `text` to have the breaks in orig"""
     continuous_orig = ''.join(orig.split())
     continuous = ''.join(text.split())
     assert continuous_orig == continuous, '\n%\n%s' % (continuous_orig, continuous)
@@ -298,35 +326,99 @@ def retokenize(text):
     return ''.join(out_parts)
 
 
+
+import string
+
+punctuation = string.punctuation
+punctuation = punctuation .replace("-", "")  # don't remove hyphens
+RE_BREAK = re.compile(r'(\w+)-([\n\f\r]+)(\w+)([%s]*)\s*' % punctuation,
+                      re.MULTILINE | re.DOTALL)
+
+
+hyphenated = set()
+
+
+def unbreak(m):
+    global hyphenated
+
+    w00 = m.group(0)
+    w0 = m.group(1) + '-' + m.group(2) + m.group(3)
+    w1 = m.group(1) + '-' + m.group(3)
+    w2 = m.group(1) + m.group(3)
+    w1n = w1 + m.group(4) + '\n'
+    w2n = w2 + m.group(4) + '\n'
+    p0 = Pw(w0)
+    p1 = Pw(w1)
+    p2 = Pw(w1)
+    if p1 < 1e-32 and p2 < 1e-34:
+        p1a = Pw(m.group(1)) * Pw(m.group(3))
+        if p1a > 1e-27:
+            p1 = p1a
+    probs = [(p, i) for i, p in enumerate([p0, p1, p2])]
+    words = [w00, w1n, w2n]
+    _, best = max(probs)
+
+    if best != 2:
+        hyphenated.add((w1, w2))
+    # if 'telecom-munication' in words[best]:
+    #     print([(m.group(i), Pw(m.group(i))) for i in (1, 2, 3)])
+    #     print('%-20s->%-20s: %8g %8g %8g %s' % (w00.replace('\n', '<NL>'), w2n[:-1], p0, p1, p2, best))
+    #     assert False
+    # # if w2 not in {'domainindependent', 'transmissionline', 'characManuscript',
+    # #               'manuallysegmented', 'privacypreserving', 'reidentification', 'deidentification',
+    # #               'predicateargument', 'verificationbased', 'characterisstructure',
+    # #               'electrounpublished', 'acidificationthreatens',
+    # #               'counterintelligence', 'libertyrestricting'}:
+    #     assert best == 2, (m.groups(), m.group(0))
+    return words[best]
+
+
+def dehyphenate(text):
+    """
+        The businesses around newspapers, books, and mag-
+        azines are changing on a daily basis; even still, global electronic com-
+        munication over the Internet
+     =>
+        The businesses around newspapers, books, and magazines
+        are changing on a daily basis; even still, global electronic communication
+        over the Internet
+    """
+    assert isinstance(text, str), type(text)
+    print([type(x) for x in (text, RE_BREAK, unbreak)])
+    unbroke = RE_BREAK.sub(unbreak, text)
+    return unbroke
+
+
 def clean_file(path, path_cln, min_len=100):
     assert path != path_cln
     text = text0 = text00 = utils.read_file(path)
-    while True:
-        text = RE_NL.sub('\n', text)
-        text = RE_SPACE.sub(' ', text)
-        text = RE_SPNL.sub('\n', text)
-        text = RE_ENDS.sub('', text)
-        if text == text0:
-            break
-        text0 = text
-    text += '\n'
+    # while True:
+    #     text = RE_NL.sub('\n', text)
+    #     text = RE_SPACE.sub(' ', text)
+    #     text = RE_SPNL.sub('\n', text)
+    #     text = RE_ENDS.sub('', text)
+    #     if text == text0:
+    #         break
+    #     text0 = text
+    # text += '\n'
 
-    text = retokenize(text)
+    # text = retokenize(text)
+    text = dehyphenate(text)
 
     # print('=' * 80)
     # print(text00[:100])
     # print('-' * 80)
     # print(text[:100])
-    if len(text) >= min_len:
-        assert len(text) < len(text00), (len(text), len(text00))
-    text = text[:2000]
+    # if len(text) >= min_len:
+    #     assert len(text) < len(text00), (len(text), len(text00))
+    # text = text[:20000]
     if len(text) >= min_len:
         print('-' * 80)
-        print(text)
+        print(text[:200])
         print('-' * 80)
         utils.write_file(path_cln, text)
         return True, len(text0), len(text)
-    assert False, ('yikes', len(text), text[:20])
+    # assert False, ('yikes', path, len(text), text[:20])
     return False, 0, 0
 
 
@@ -343,16 +435,28 @@ def clean_text_corpus(text_dir, clean_dir):
             print('%3d: %-30s %4d->%4d' % (n, path_cln, l0, l))
             n += 1
 
+    print('-' * 80)
+    for i, (w1, w2) in enumerate(sorted(hyphenated)):
+        print('%4d: %-40s: %s' % (i, w1, w2))
+    assert False
+
 
 pdf_dir = '~/testdata'
 text_dir = '~/testdata.txt/deploy'
+text2_dir = '~/testdata.txt.2/deploy'
 clean_dir = '~/testdata.clean/deploy'
+clean2_dir = '~/testdata.clean.2/deploy'
 pdf_dir = os.path.expanduser(pdf_dir)
 text_dir = os.path.expanduser(text_dir)
+text2_dir = os.path.expanduser(text2_dir)
 clean_dir = os.path.expanduser(clean_dir)
+clean2_dir = os.path.expanduser(clean2_dir)
 print('pdf_dir=%s' % pdf_dir)
 print('text_dir=%s' % text_dir)
+print('text2_dir=%s' % text2_dir)
 print('clean_dir=%s' % clean_dir)
+print('clean2_dir=%s' % clean2_dir)
+
 
 if False:
     path = os.path.join(text_dir, '000019.txt')
@@ -360,7 +464,8 @@ if False:
     clean_file(path, 'blah.txt')
     assert False
 
+if False:
+    corpus_to_text(pdf_dir, text_dir, method=1)
+    # corpus_to_text(pdf_dir, text2_dir, method=2)
 if True:
-    corpus_to_text(pdf_dir, text_dir)
-# if True:
-#     clean_text_corpus(text_dir, clean_dir)
+    clean_text_corpus(text_dir, clean_dir)
