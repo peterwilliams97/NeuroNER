@@ -1,0 +1,14 @@
+{
+    "items": [
+        {
+            "type": "text/plain",
+            "value": "My phone number is (555) 253-0000.",
+        },
+    ],
+    "inspectConfig": {
+        "infoTypes": [],
+        "minLikelihood": "LIKELIHOOD_UNSPECIFIED",
+        "maxFindings": 0,
+        "includeQuote": true
+    }
+}

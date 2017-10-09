@@ -124,8 +124,8 @@ class Dataset(object):
                     if key not in token_lengths or not token_lengths[key]:
                         continue
                     print('=' * 80)
-                    print('token_lengths[{\'{1}\'}][0][0:10]: {0}'.format(token_lengths[key][0][0:10], key))
-                    print('   characters[\'{1}\'][0][0:10]: {0}'.format(characters[key][0][0:10], key))
+                    print("token_lengths['{0}'][0][0:10]: {1}".format(key, token_lengths[key][0][0:10]))
+                    print("   characters['{1}'][0][0:10]: {0}".format(characters[key][0][0:10], key))
                     print('token_indices[\'{1}\'][0:10]: {0}'.format(token_indices[key][0:10], key))
                     print('label_indices[\'{1}\'][0:10]: {0}'.format(label_indices[key][0:10], key))
                     print('character_indices[\'{1}\'][0][0:10]: {0}'.format(character_indices[key][0][0:10], key))
@@ -181,7 +181,7 @@ class Dataset(object):
 
     def load_dataset(self, dataset_filepaths, parameters, token_to_vector=None):
         '''
-            dataset_filepaths : dictionary with keys 'train', 'valid', 'test', 'deploy'
+            dataset_filepaths: dictionary with keys 'train', 'valid', 'test', 'deploy'
         '''
         start_time = time.time()
 
@@ -222,8 +222,7 @@ class Dataset(object):
                 character_count[dataset_type]) = self._parse_dataset(dataset_filepaths.get(dataset_type, None))
 
             if self.verbose:
-                print("dataset_type: {0}".format(dataset_type))
-                print("len(token_count[dataset_type]): {0}".format(len(token_count[dataset_type])))
+                print("len(token_count['{0}']): {1}".format(dataset_type, len(token_count[dataset_type])))
 
         token_count['all'] = {}
         for token in (list(token_count['train'].keys()) + list(token_count['valid'].keys()) +
@@ -284,9 +283,9 @@ class Dataset(object):
                 iteration_number += 1
 
             if (parameters['remap_unknown_tokens_to_unk'] == 1 and
-                (token_count['train'][token] == 0 or
-                parameters['load_only_pretrained_token_embeddings']) and
-                not utils_nlp.is_token_in_pretrained_embeddings(token, token_to_vector, parameters) and
+                    (token_count['train'][token] == 0 or
+                     parameters['load_only_pretrained_token_embeddings']) and
+                    not utils_nlp.is_token_in_pretrained_embeddings(token, token_to_vector, parameters) and
                     token not in all_tokens_in_pretraining_dataset):
                 if self.verbose:
                     print("token: {0}".format(token))
@@ -361,7 +360,8 @@ class Dataset(object):
         if self.verbose:
             print('token_to_index: {0}'.format(token_to_index))
         index_to_token = utils.reverse_dictionary(token_to_index)
-        if parameters['remap_unknown_tokens_to_unk'] == 1: index_to_token[self.UNK_TOKEN_INDEX] = self.UNK
+        if parameters['remap_unknown_tokens_to_unk'] == 1:
+            index_to_token[self.UNK_TOKEN_INDEX] = self.UNK
         if self.verbose:
             print('index_to_token: {0}'.format(index_to_token))
 

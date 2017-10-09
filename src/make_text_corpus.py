@@ -6,9 +6,14 @@ from glob import glob
 from collections import defaultdict
 import hashlib
 import shutil
-
 # from shutil import copyfile
 from subprocess import CalledProcessError, Popen, PIPE
+
+
+# Settings
+MAX_DOC_SIZE = 10000
+CONVERT_PDF = False
+CLEAN_TEXT = True
 
 
 def run_command(cmd):
@@ -21,9 +26,9 @@ pdfminer = '~/pdf/pdfminer/tools/pdf2txt.py'
 pdfminer = os.path.expanduser(pdfminer)
 pdfminer = '/anaconda/bin/pdf2txt.py'
 # assert os.path.exists(pdfminer), pdfminer
-assert shutil.which('pdftotext')
-# assert shutil.which('pdfbox-app-2.0.7.jar')
-assert shutil.which('pdf2txt.py')
+# assert shutil.which('pdftotext')
+# # assert shutil.which('pdfbox-app-2.0.7.jar')
+# assert shutil.which('pdf2txt.py')
 
 
 def pdftotext(pdf, txt, method):
@@ -45,7 +50,7 @@ def pdftotext(pdf, txt, method):
     if 'Permission Error' not in str(stderr):
         print('-' * 80)
         print(' '.join(cmd))
-        # raise CalledProcessError(rc, cmd)
+        raise CalledProcessError(rc, cmd)
 
 
 if False:
@@ -80,76 +85,76 @@ def extract_name(path, start=None, whole=False):
     return os.path.splitext(name)[0]
 
 
-def ascii_count(s, limit):
-    return len([c for c in s if ord(c) > limit])
+# def ascii_count(s, limit):
+#     return len([c for c in s if ord(c) > limit])
 
 
-def punc_count(s):
-    return len([c for c in s if not ((ord('A') <= ord(c) <= ord('Z')) or
-                                     (ord('a') <= ord(c) <= ord('z')))])
+# def punc_count(s):
+#     return len([c for c in s if not ((ord('A') <= ord(c) <= ord('Z')) or
+#                                      (ord('a') <= ord(c) <= ord('z')))])
 
 
-def find_keeper(paths):
-    # print('**', sorted(paths))
-    paths = sorted(paths, key=lambda x: (-len(x), x))
-    for path in paths:
-        other_paths = [p for p in paths if p != path]
-        if 'xarc' in path and not any('xarc' in p for p in other_paths):
-            print('1 %s -> %s' % (other_paths, path))
-            # assert False
-            return {path}
-        name = extract_name(path)
-        other_names = [extract_name(p) for p in other_paths]
-        # print('!!', name, other_names)
-        if all(name in p for p in other_names):
-            print('2 %s -> %s' % (other_paths, path))
-            # assert False
-            return {path}
-        for limit in 255, 127:
-            if ascii_count(path, limit) < min(ascii_count(p, limit) for p in other_paths):
-                print('3 %s -> %s' % (other_paths, path))
-                # print('$$$', limit, ascii_count(path, limit), min(ascii_count(p, limit) for p in other_paths))
-                # assert False
-                return {path}
-        if punc_count(path) < min(punc_count(p) for p in other_paths):
-            print('4 %s -> %s' % (other_paths, path))
-            # print('$##', limit, ascii_count(path, limit), min(ascii_count(p, limit) for p in other_paths))
-            # assert False
-            return {path}
+# def find_keeper(paths):
+#     # print('**', sorted(paths))
+#     paths = sorted(paths, key=lambda x: (-len(x), x))
+#     for path in paths:
+#         other_paths = [p for p in paths if p != path]
+#         if 'xarc' in path and not any('xarc' in p for p in other_paths):
+#             print('1 %s -> %s' % (other_paths, path))
+#             # assert False
+#             return {path}
+#         name = extract_name(path)
+#         other_names = [extract_name(p) for p in other_paths]
+#         # print('!!', name, other_names)
+#         if all(name in p for p in other_names):
+#             print('2 %s -> %s' % (other_paths, path))
+#             # assert False
+#             return {path}
+#         for limit in 255, 127:
+#             if ascii_count(path, limit) < min(ascii_count(p, limit) for p in other_paths):
+#                 print('3 %s -> %s' % (other_paths, path))
+#                 # print('$$$', limit, ascii_count(path, limit), min(ascii_count(p, limit) for p in other_paths))
+#                 # assert False
+#                 return {path}
+#         if punc_count(path) < min(punc_count(p) for p in other_paths):
+#             print('4 %s -> %s' % (other_paths, path))
+#             # print('$##', limit, ascii_count(path, limit), min(ascii_count(p, limit) for p in other_paths))
+#             # assert False
+#             return {path}
 
-    print('5 %s -> %s' % (paths[1:], path[0]))
-    return {paths[0]}
+#     print('5 %s -> %s' % (paths[1:], path[0]))
+#     return {paths[0]}
 
 
-def corpus_to_keepers(pdf_dir):
-    sha1_paths = defaultdict(set)
-    xarc = []
-    for i, path in enumerate(glob(os.path.join(pdf_dir, '**'), recursive=True)):
-        # print('%4d: %s' % (i, fn))
-        if not os.path.isfile(path):
-            continue
-        _, ext = os.path.splitext(path)
-        if ext != '.pdf':
-            continue
-        assert os.path.abspath(path) == path, (os.path.abspath(path), path)
-        sha1 = sha1_digest(path)
-        sha1_paths[sha1].add(path)
-        if 'xarc' in path:
-            xarc.append(path)
-    assert xarc
-    print('%d xarc files' % len(xarc))
+# def corpus_to_keepers(pdf_dir):
+#     sha1_paths = defaultdict(set)
+#     xarc = []
+#     for i, path in enumerate(glob(os.path.join(pdf_dir, '**'), recursive=True)):
+#         # print('%4d: %s' % (i, fn))
+#         if not os.path.isfile(path):
+#             continue
+#         _, ext = os.path.splitext(path)
+#         if ext != '.pdf':
+#             continue
+#         assert os.path.abspath(path) == path, (os.path.abspath(path), path)
+#         sha1 = sha1_digest(path)
+#         sha1_paths[sha1].add(path)
+#         if 'xarc' in path:
+#             xarc.append(path)
+#     assert xarc
+#     print('%d xarc files' % len(xarc))
 
-    for sha1 in sha1_paths:
-        paths = sha1_paths[sha1]
-        if len(paths) > 1:
-            sha1_paths[sha1] = find_keeper(paths)
+#     for sha1 in sha1_paths:
+#         paths = sha1_paths[sha1]
+#         if len(paths) > 1:
+#             sha1_paths[sha1] = find_keeper(paths)
 
-    keepers = []
-    for paths in sha1_paths.values():
-        assert len(paths) == 1, (len(paths), paths)
-        keepers.append(list(paths)[0])
-    keepers.sort()
-    return keepers
+#     keepers = []
+#     for paths in sha1_paths.values():
+#         assert len(paths) == 1, (len(paths), paths)
+#         keepers.append(list(paths)[0])
+#     keepers.sort()
+#     return keepers
 
 
 def corpus_to_text(pdf_dir, text_dir, method, keep_dirs=False):
@@ -191,39 +196,39 @@ import re
 from ngrams import segment2, cPw, segment_cpts, segment_cpts_recursive, Pw
 
 
-RE_WORD = re.compile(r'\w+', re.MULTILINE | re.DOTALL)
-RE_NL = re.compile(r'[\n\f\r]+', re.MULTILINE | re.DOTALL)
+# RE_WORD = re.compile(r'\w+', re.MULTILINE | re.DOTALL)
+# RE_NL = re.compile(r'[\n\f\r]+', re.MULTILINE | re.DOTALL)
 RE_SPACE = re.compile(r'[\t ]+', re.MULTILINE | re.DOTALL)
-RE_SPNL = re.compile(r'[\t ]+[\n\f\r]+', re.MULTILINE | re.DOTALL)
-RE_ENDS = re.compile(r'(?:^[\n\f\r]+|[\n\f\r]+$)', re.MULTILINE | re.DOTALL)
-RE_SPACEALL = re.compile(r'\s+', re.MULTILINE | re.DOTALL)
-cat = ''.join
+# RE_SPNL = re.compile(r'[\t ]+[\n\f\r]+', re.MULTILINE | re.DOTALL)
+# RE_ENDS = re.compile(r'(?:^[\n\f\r]+|[\n\f\r]+$)', re.MULTILINE | re.DOTALL)
+# RE_SPACEALL = re.compile(r'\s+', re.MULTILINE | re.DOTALL)
+# cat = ''.join
 
 
-def best_words(all_words, grp_ids):
-    # print('###', all_words[:5])
-    grp = [all_words[i] for i in grp_ids]
-    words = []
-    words.append(grp[0])
-    i = 1
-    while i < len(grp) - 1:
-        prev = words[-1]
-        w0 = grp[i]
-        w1 = cat([grp[i], grp[i + 1]])
-        assert isinstance(prev, str), (i, prev, w0, w1)
-        assert isinstance(w0, str), (i, prev, w0, w1)
-        assert isinstance(w1, str), (i, prev, w0, w1)
-        p0 = cPw(w0, prev)
-        p1 = cPw(w1, prev)
-        print('>>>>> %12g %12g %5s %10s | %s' % (p0, p1, p0 < p1, w0, w1))
-        if p0 >= p1:
-            words.append(w0)
-            i += 1
-        else:
-            words.append(w1)
-            i += 2
-    words.append(grp[-1])
-    return ' '.join(words)
+# def best_words(all_words, grp_ids):
+#     # print('###', all_words[:5])
+#     grp = [all_words[i] for i in grp_ids]
+#     words = []
+#     words.append(grp[0])
+#     i = 1
+#     while i < len(grp) - 1:
+#         prev = words[-1]
+#         w0 = grp[i]
+#         w1 = cat([grp[i], grp[i + 1]])
+#         assert isinstance(prev, str), (i, prev, w0, w1)
+#         assert isinstance(w0, str), (i, prev, w0, w1)
+#         assert isinstance(w1, str), (i, prev, w0, w1)
+#         p0 = cPw(w0, prev)
+#         p1 = cPw(w1, prev)
+#         print('>>>>> %12g %12g %5s %10s | %s' % (p0, p1, p0 < p1, w0, w1))
+#         if p0 >= p1:
+#             words.append(w0)
+#             i += 1
+#         else:
+#             words.append(w1)
+#             i += 2
+#     words.append(grp[-1])
+#     return ' '.join(words)
 
 
 # Reducing printing by finding classes of documents that
@@ -276,65 +281,62 @@ if False:
     assert False
 
 
-def retokenize(text):
-    matches = [m for m in RE_WORD.finditer(text)]
-    words = [m.group(0) for m in matches]
-    seps = [text[m0.end():m1.start()] for m0, m1 in zip(matches[:-1], matches[1:])]
-    print('-' * 80)
-    for i in range(10):
-        print('%3d: %-20s -- %s' % (i, words[i], seps[i]))
-    n = len(seps)
-    groups = []
-    grp = []
-    for i in range(n):
-        if seps[i].isspace():
-            grp.append(i)
-        elif grp:
-            groups.append(grp)
-            grp = []
-    print('~' * 80)
-    out_parts = []
-    for i in range(n):
-        if i > 0:
-            out_parts.append(seps[i - 1])
-        # txt = ' '.join(words[i] for i in groups[i])
-        wrds = [words[j] for j in groups[i]]
-        if len(wrds) == 1:
-            out_parts.append(wrds[0])
-        else:
-            run = ''.join(wrds)
-            p2, seg2 = segment2(run)
-            seg = segment_cpts_recursive(wrds)
-            seg_a = segment_cpts_recursive(wrds, do_mean=True)
-            seg_b = segment_cpts_recursive(wrds, L=6)
-            seg = ' '.join(seg)
-            seg_a = ' '.join(seg_a)
-            seg_b = ' '.join(seg_b)
-            seg2 = ' '.join(seg2)
-            seg2b = rebreak(' '.join(wrds), seg2)
-            # wrds = best_words(words, groups[i])
-            # p, seg = 0., ''
-            if i < 5:
-                print('%3d: %s' % (i, groups[i]))
-                print('\t%10s -- %s' % ('', seg))
-                print('\t%10s -- %s' % ('', seg_a))
-                print('\t%10s -- %s' % ('', seg_b))
-                print('\t%10g -- %s' % (p2, seg2))
-                print('\t%10g -- %s' % (p2, seg2b))
-            out_parts.append(seg2b)
+# def retokenize(text):
+#     matches = [m for m in RE_WORD.finditer(text)]
+#     words = [m.group(0) for m in matches]
+#     seps = [text[m0.end():m1.start()] for m0, m1 in zip(matches[:-1], matches[1:])]
+#     print('-' * 80)
+#     for i in range(10):
+#         print('%3d: %-20s -- %s' % (i, words[i], seps[i]))
+#     n = len(seps)
+#     groups = []
+#     grp = []
+#     for i in range(n):
+#         if seps[i].isspace():
+#             grp.append(i)
+#         elif grp:
+#             groups.append(grp)
+#             grp = []
+#     print('~' * 80)
+#     out_parts = []
+#     for i in range(n):
+#         if i > 0:
+#             out_parts.append(seps[i - 1])
+#         # txt = ' '.join(words[i] for i in groups[i])
+#         wrds = [words[j] for j in groups[i]]
+#         if len(wrds) == 1:
+#             out_parts.append(wrds[0])
+#         else:
+#             run = ''.join(wrds)
+#             p2, seg2 = segment2(run)
+#             seg = segment_cpts_recursive(wrds)
+#             seg_a = segment_cpts_recursive(wrds, do_mean=True)
+#             seg_b = segment_cpts_recursive(wrds, L=6)
+#             seg = ' '.join(seg)
+#             seg_a = ' '.join(seg_a)
+#             seg_b = ' '.join(seg_b)
+#             seg2 = ' '.join(seg2)
+#             seg2b = rebreak(' '.join(wrds), seg2)
+#             # wrds = best_words(words, groups[i])
+#             # p, seg = 0., ''
+#             if i < 5:
+#                 print('%3d: %s' % (i, groups[i]))
+#                 print('\t%10s -- %s' % ('', seg))
+#                 print('\t%10s -- %s' % ('', seg_a))
+#                 print('\t%10s -- %s' % ('', seg_b))
+#                 print('\t%10g -- %s' % (p2, seg2))
+#                 print('\t%10g -- %s' % (p2, seg2b))
+#             out_parts.append(seg2b)
 
-    return ''.join(out_parts)
-
+#     return ''.join(out_parts)
 
 
 import string
 
 punctuation = string.punctuation
-punctuation = punctuation .replace("-", "")  # don't remove hyphens
+punctuation = punctuation.replace("-", "")  # don't remove hyphens
 RE_BREAK = re.compile(r'(\w+)-([\n\f\r]+)(\w+)([%s]*)\s*' % punctuation,
                       re.MULTILINE | re.DOTALL)
-
-
 hyphenated = set()
 
 
@@ -411,7 +413,7 @@ def clean_file(path, path_cln, min_len=100):
     # print(text[:100])
     # if len(text) >= min_len:
     #     assert len(text) < len(text00), (len(text), len(text00))
-    # text = text[:20000]
+    text = text[:MAX_DOC_SIZE]
     if len(text) >= min_len:
         print('-' * 80)
         print(text[:200])
@@ -438,7 +440,6 @@ def clean_text_corpus(text_dir, clean_dir):
     print('-' * 80)
     for i, (w1, w2) in enumerate(sorted(hyphenated)):
         print('%4d: %-40s: %s' % (i, w1, w2))
-    assert False
 
 
 pdf_dir = '~/testdata'
@@ -464,8 +465,8 @@ if False:
     clean_file(path, 'blah.txt')
     assert False
 
-if False:
+if CONVERT_PDF:
     corpus_to_text(pdf_dir, text_dir, method=1)
     # corpus_to_text(pdf_dir, text2_dir, method=2)
-if True:
+if CLEAN_TEXT:
     clean_text_corpus(text_dir, clean_dir)

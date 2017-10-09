@@ -540,4 +540,5 @@ class NeuroNER(object):
         self.__del__()
 
     def __del__(self):
-        self.sess.close()
+        if hasattr(self, 'sess'):
+            self.sess.close()

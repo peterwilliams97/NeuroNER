@@ -18,18 +18,18 @@ def order_dictionary(dictionary, mode, reverse=False):
     '''
 
     if mode == 'key':
-        return collections.OrderedDict(sorted(dictionary.items(),
+        return MyOrderedDict(sorted(dictionary.items(),
                                               key=operator.itemgetter(0),
                                               reverse=reverse))
     elif mode == 'value':
-        return collections.OrderedDict(sorted(dictionary.items(),
+        return MyOrderedDict(sorted(dictionary.items(),
                                               key=operator.itemgetter(1),
                                               reverse=reverse))
     elif mode == 'key_value':
-        return collections.OrderedDict(sorted(dictionary.items(),
+        return MyOrderedDict(sorted(dictionary.items(),
                                               reverse=reverse))
     elif mode == 'value_key':
-        return collections.OrderedDict(sorted(dictionary.items(),
+        return MyOrderedDict(sorted(dictionary.items(),
                                               key=lambda x: (x[1], x[0]),
                                               reverse=reverse))
     else:
@@ -42,9 +42,9 @@ def reverse_dictionary(dictionary):
         http://stackoverflow.com/questions/25480089/right-way-to-initialize-an-ordereddict-using-its-constructor-such-that-it-retain
     '''
     # print('type(dictionary): {0}'.format(type(dictionary)))
-    if type(dictionary) is collections.OrderedDict:
+    if type(dictionary) is MyOrderedDict:
         #print(type(dictionary))
-        return collections.OrderedDict([(v, k) for k, v in dictionary.items()])
+        return MyOrderedDict([(v, k) for k, v in dictionary.items()])
     else:
         return {v: k for k, v in dictionary.items()}
 
@@ -63,8 +63,8 @@ def merge_dictionaries(*dict_args):
 
 def pad_list(old_list, padding_size, padding_value):
     '''
-    http://stackoverflow.com/questions/3438756/some-built-in-to-pad-a-list-in-python
-    Example: pad_list([6,2,3], 5, 0) returns [6,2,3,0,0]
+        http://stackoverflow.com/questions/3438756/some-built-in-to-pad-a-list-in-python
+        Example: pad_list([6,2,3], 5, 0) returns [6,2,3,0,0]
     '''
     assert padding_size >= len(old_list)
     return old_list + [padding_value] * (padding_size - len(old_list))
@@ -72,8 +72,8 @@ def pad_list(old_list, padding_size, padding_value):
 
 def get_basename_without_extension(filepath):
     '''
-    Getting the basename of the filepath without the extension
-    E.g. 'data/formatted/movie_reviews.pickle' -> 'movie_reviews'
+        Getting the basename of the filepath without the extension
+        E.g. 'data/formatted/movie_reviews.pickle' -> 'movie_reviews'
     '''
     return os.path.basename(os.path.splitext(filepath)[0])
 
@@ -95,7 +95,7 @@ def get_current_milliseconds():
 
 def get_current_time_in_seconds():
     '''
-    http://stackoverflow.com/questions/415511/how-to-get-current-time-in-python
+        http://stackoverflow.com/questions/415511/how-to-get-current-time-in-python
     '''
     return(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
 
@@ -155,3 +155,23 @@ def read_file(text_filepath):
 def write_file(text_filepath, text):
     with codecs.open(text_filepath, 'w', 'UTF-8') as f:
         f.write(text)
+
+
+from collections import OrderedDict
+
+
+class MyOrderedDict(OrderedDict):
+    def __str__(self):
+        return '{%s}' % ', '.join('%s: %s' % (k, v) for k, v in self.items())
+
+
+
+if __name__ == '__main__':
+    d = MyOrderedDict()
+    d['a'] = 1
+    d['c'] = 2
+    d['b'] = 0
+
+    print('d=%s' % d)
+    s = MyOrderedDict((k, d[k]) for k in sorted(d))
+    print('s=%s' % s)
