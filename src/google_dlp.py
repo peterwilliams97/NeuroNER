@@ -20,8 +20,11 @@ f'PHONE_NUMBER'},'VERY_LIKELY','0566 223 999'
 import requests
 from subprocess import CalledProcessError, Popen, PIPE
 import json
-from pprint import pprint
+from collections import defaultdict
+import glob
+import os
 from utils import read_file, write_file
+# from pprint import pprint
 
 
 def run_command(cmd):
@@ -44,38 +47,35 @@ def get_access_token():
     return access_token
 
 
-access_token = get_access_token()
-print("access_token=%r" % access_token)
-
-headers = {
-    'Authorization': 'Bearer %s' % access_token,
-    'Content-Type': 'application/json',
-}
+access_token = None
 
 
-
-ehr = '''
-    Peter Williams is 25 years old.
-    His SSN is 321-67-2114.
-    He lives in 1 Burke Rd, Camberwell
-    His phone number is 0566 223 999
-    Peter's Australian tax file number is 213 824 911
-
-'''
-json_req = '''{
-    "items": [
-        {
-            "type": "text/plain",
-            "value": "%s",
-        },
-    ],
-    "inspectConfig": {
-        "infoTypes": [],
-        "minLikelihood": "LIKELIHOOD_UNSPECIFIED",
-         "maxFindings": 0,
-        "includeQuote": true
+def get_headers():
+    global access_token
+    if not access_token:
+        access_token = get_access_token()
+        print("access_token=%r" % access_token)
+    headers = {
+        'Authorization': 'Bearer %s' % access_token,
+        'Content-Type': 'application/json',
     }
-}'''
+    return headers
+
+
+# json_req = '''{
+#     "items": [
+#         {
+#             "type": "text/plain",
+#             "value": "%s",
+#         },
+#     ],
+#     "inspectConfig": {
+#         "infoTypes": [],
+#         "minLikelihood": "LIKELIHOOD_UNSPECIFIED",
+#          "maxFindings": 0,
+#         "includeQuote": true
+#     }
+# }'''
 
 dict_req = {
     "items": [
@@ -93,22 +93,22 @@ dict_req = {
 }
 
 
-
-# data = open('inspect-request.json')
 api_base = 'https://dlp.googleapis.com/v2beta1/content:'
 api_inspect = api_base + 'inspect'
 api_deidentify = api_base + 'deidentify'
 
 
 def inspect(text):
-    text = text[:10000]
+    headers = get_headers()
+
+    text = text[:100000]
     text = text.replace('"', '\\"')
     # text = text.encode('utf-8')
 
     d = dict_req.copy()
     d["items"][0]["value"] = text
     data = json.dumps(d)
-    # data = json_req % text
+
     r = requests.post('https://dlp.googleapis.com/v2beta1/content:inspect', headers=headers, data=data)
     if not r.ok:
         print('=' * 80)
@@ -130,12 +130,10 @@ def process_file(path, path_out):
     write_file(path_out, result)
 
 
-import glob
-import os
-
-
 def process_dir(data_dir, results_dir):
+    assert os.path.exists(data_dir), data_dir
     os.makedirs(results_dir, exist_ok=True)
+
     text_filepaths = sorted(glob.glob(os.path.join(data_dir, '*.txt')))
     for path in text_filepaths:
         print(path, end='->')
@@ -143,7 +141,65 @@ def process_dir(data_dir, results_dir):
         path_out = os.path.join(results_dir, '%s.json' % name)
         process_file(path, path_out)
         print(os.path.abspath(path_out))
-        # assert False
 
 
-process_dir('/Users/pcadmin/testdata.clean/deploy', '../output/google.dlp/deploy')
+def inspect_result(path):
+    infoTypes = defaultdict(list)
+
+    with open(path, 'r') as ff:
+        d = json.load(ff)
+    # print('d=%s' % type(d))
+    # pprint(d)
+    results = d['results']
+    # print('results=%s' % type(results))
+    # pprint(results)
+    for i, r in enumerate(results):
+        # print('results[%d]=%s %d' % (i, type(r), len(r)))
+        # pprint(r)
+        if 'findings' not in r:
+            continue
+        findings = r['findings']
+        # print('findings=%s %d' % (type(findings), len(findings)))
+        # pprint(findings)
+        for j, f in enumerate(findings):
+            print('findings[%d]=%s %d' % (j, type(f), len(f)))
+            # pprint(f)
+
+            # print(i, j, f['infoType'])
+            t = f['infoType']['name']
+            quote = f['quote']
+            infoTypes[t].append(quote)
+
+    return infoTypes
+
+
+def list2freq(quotes):
+    freq = defaultdict(int)
+    for q in quotes:
+        freq[q] += 1
+    return sorted(freq, key=lambda x: (-freq[x], x))
+
+
+def analyze_results(results_dir):
+    json_filepaths = sorted(glob.glob(os.path.join(results_dir, '*.json')))
+    typeQuotes = defaultdict(list)
+    for path in json_filepaths:
+        tq = inspect_result(path)
+        for t, q in tq.items():
+            typeQuotes[t].extend(q)
+    for i, t in enumerate(sorted(typeQuotes)):
+        quotes = list2freq(typeQuotes[t])
+        print('%2d: %-25s %4d %s' % (i, t, len(quotes), quotes[:5]))
+
+
+data_dir = '/Users/pcadmin/testdata.clean/deploy'
+results_dir = '../output/google.dlp/testdata.clean/deploy'
+
+data_dir = '../data/i2b2_2014_deid/test'
+results_dir = '../output/google.dlp/i2b2_2014_deid/test'
+
+
+if True:
+    process_dir(data_dir, results_dir)
+if True:
+    analyze_results(results_dir)
