@@ -165,7 +165,6 @@ class MyOrderedDict(OrderedDict):
         return '{%s}' % ', '.join('%s: %s' % (k, v) for k, v in self.items())
 
 
-
 if __name__ == '__main__':
     d = MyOrderedDict()
     d['a'] = 1

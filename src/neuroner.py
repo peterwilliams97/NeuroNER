@@ -52,46 +52,46 @@ class NeuroNER(object):
             that each parameter is cast to the correct type.
             Command line arguments take precedence over parameters specified in the parameter file.
         '''
-        parameters = {'pretrained_model_folder':'../trained_models/conll_2003_en',
-                      'dataset_text_folder':'../data/conll2003/en',
-                      'character_embedding_dimension':25,
-                      'character_lstm_hidden_state_dimension':25,
-                      'check_for_digits_replaced_with_zeros':True,
-                      'check_for_lowercase':True,
-                      'debug':False,
-                      'dropout_rate':0.5,
-                      'experiment_name':'test',
-                      'freeze_token_embeddings':False,
-                      'gradient_clipping_value':5.0,
-                      'learning_rate':0.005,
-                      'load_only_pretrained_token_embeddings':False,
-                      'load_all_pretrained_token_embeddings':False,
-                      'main_evaluation_mode':'conll',
-                      'maximum_number_of_epochs':100,
-                      'number_of_cpu_threads':8,
-                      'number_of_gpus':0,
-                      'optimizer':'sgd',
-                      'output_folder':'../output',
-                      'patience':10,
-                      'plot_format':'pdf',
-                      'reload_character_embeddings':True,
-                      'reload_character_lstm':True,
-                      'reload_crf':True,
-                      'reload_feedforward':True,
-                      'reload_token_embeddings':True,
-                      'reload_token_lstm':True,
-                      'remap_unknown_tokens_to_unk':True,
-                      'spacylanguage':'en',
-                      'tagging_format':'bioes',
-                      'token_embedding_dimension':100,
-                      'token_lstm_hidden_state_dimension':100,
-                      'token_pretrained_embedding_filepath':'../data/word_vectors/glove.6B.100d.txt',
-                      'tokenizer':'spacy',
-                      'train_model':True,
-                      'use_character_lstm':True,
-                      'use_crf':True,
-                      'use_pretrained_model':False,
-                      'verbose':False}
+        parameters = {'pretrained_model_folder': '../trained_models/conll_2003_en',
+                      'dataset_text_folder': '../data/conll2003/en',
+                      'character_embedding_dimension': 25,
+                      'character_lstm_hidden_state_dimension': 25,
+                      'check_for_digits_replaced_with_zeros': True,
+                      'check_for_lowercase': True,
+                      'debug': False,
+                      'dropout_rate': 0.5,
+                      'experiment_name': 'test',
+                      'freeze_token_embeddings': False,
+                      'gradient_clipping_value': 5.0,
+                      'learning_rate': 0.005,
+                      'load_only_pretrained_token_embeddings': False,
+                      'load_all_pretrained_token_embeddings': False,
+                      'main_evaluation_mode': 'conll',
+                      'maximum_number_of_epochs': 100,
+                      'number_of_cpu_threads': 8,
+                      'number_of_gpus': 0,
+                      'optimizer': 'sgd',
+                      'output_folder': '../output',
+                      'patience': 10,
+                      'plot_format': 'pdf',
+                      'reload_character_embeddings': True,
+                      'reload_character_lstm': True,
+                      'reload_crf': True,
+                      'reload_feedforward': True,
+                      'reload_token_embeddings': True,
+                      'reload_token_lstm': True,
+                      'remap_unknown_tokens_to_unk': True,
+                      'spacylanguage': 'en',
+                      'tagging_format': 'bioes',
+                      'token_embedding_dimension': 100,
+                      'token_lstm_hidden_state_dimension': 100,
+                      'token_pretrained_embedding_filepath': '../data/word_vectors/glove.6B.100d.txt',
+                      'tokenizer': 'spacy',
+                      'train_model': True,
+                      'use_character_lstm': True,
+                      'use_crf': True,
+                      'use_pretrained_model': False,
+                      'verbose': False}
         # If a parameter file is specified, load it
         if len(parameters_filepath) > 0:
             conf_parameters = configparser.ConfigParser()
@@ -133,7 +133,8 @@ class NeuroNER(object):
             for name in ['use_character_lstm', 'character_embedding_dimension', 'character_lstm_hidden_state_dimension',
                          'token_embedding_dimension', 'token_lstm_hidden_state_dimension', 'use_crf']:
                 if parameters[name] != pretraining_parameters[name]:
-                    print('WARNING: parameter {0} was overwritten from {1} to {2} to be consistent with the pretrained model'.format(
+                    print('WARNING: parameter {0} was overwritten from {1} to {2} to be '
+                          'consistent with the pretrained model'.format(
                         name, parameters[name], pretraining_parameters[name]))
                     parameters[name] = pretraining_parameters[name]
         if verbose:
@@ -287,6 +288,8 @@ class NeuroNER(object):
 
         # Parse arguments
         arguments = {k: str(v) for k, v in locals().items() if k != 'self'}
+        # print(arguments)
+        # assert False
 
         # Initialize parameters
         parameters, conf_parameters = self._load_parameters(arguments['parameters_filepath'],

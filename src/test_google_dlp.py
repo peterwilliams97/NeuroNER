@@ -65,121 +65,119 @@ headers = {
 }
 
 ehr = '''
-Har is a 43 year old 6' 214 pound gentleman who is referred for
-consultation by Dr. Harlan Oneil.  About a week ago he slipped on
-the driveway at home and sustained an injury to his left ankle.
-He was seen at Tri-City Hospital and was told he had a
-fracture.  He was placed in an air splint and advised to be
-partial weight bearing, and he is using a cane.  He is here for
-routine follow-up.
-Past medical history is notable for no ankle injuries previously.
-He has a history of diabetes and sleep apnea.  He takes Prozac,
-Cardizem, Glucophage and Amaryl.  He is also followed by Dr. Harold
-Nutter for an arrhythmia.  He does not smoke.  He drinks
-minimally.  He is a set designer at Columbia Pictures.
+    Har is a 43 year old 6' 214 pound gentleman who is referred for
+    consultation by Dr. Harlan Oneil.  About a week ago he slipped on
+    the driveway at home and sustained an injury to his left ankle.
+    He was seen at Tri-City Hospital and was told he had a
+    fracture.  He was placed in an air splint and advised to be
+    partial weight bearing, and he is using a cane.  He is here for
+    routine follow-up.
+    Past medical history is notable for no ankle injuries previously.
+    He has a history of diabetes and sleep apnea.  He takes Prozac,
+    Cardizem, Glucophage and Amaryl.  He is also followed by Dr. Harold
+    Nutter for an arrhythmia.  He does not smoke.  He drinks
+    minimally.  He is a set designer at Columbia Pictures.
 
-On examination today he has slight tenderness of the left ankle
-about four fingerbreadths above the malleolus.  The malleolus is
-non-tender medially or laterally with no ligamentous tenderness
-either.  Dorsal flexion and plantar flexion is without pain.
-There is no significant swelling.  There are no some skin changes
-with some small abrasions proximally.  There is no fibular
-tenderness proximally.  No anterior pain is noted.  No hindfoot,
-midfoot or forefoot tenderness is noted.
-I would like him to use a tube sock with his air cast.  He is
-using a cane for ambulation.  His x-rays do not show a notable
-fracture pattern today, and we will await the Radiology opinion.
-I would like him to stay in the air splint with the sock.  I will
-see him back in six weeks for review at the Boxborough office.
+    On examination today he has slight tenderness of the left ankle
+    about four fingerbreadths above the malleolus.  The malleolus is
+    non-tender medially or laterally with no ligamentous tenderness
+    either.  Dorsal flexion and plantar flexion is without pain.
+    There is no significant swelling.  There are no some skin changes
+    with some small abrasions proximally.  There is no fibular
+    tenderness proximally.  No anterior pain is noted.  No hindfoot,
+    midfoot or forefoot tenderness is noted.
+    I would like him to use a tube sock with his air cast.  He is
+    using a cane for ambulation.  His x-rays do not show a notable
+    fracture pattern today, and we will await the Radiology opinion.
+    I would like him to stay in the air splint with the sock.  I will
+    see him back in six weeks for review at the Boxborough office.
 '''
 
 ehr = '''
 
+    Record date: 2108-03-14
 
-
-Record date: 2108-03-14
-
-                     CAMPBELL EMERGENCY DEPT VISIT
+                         CAMPBELL EMERGENCY DEPT VISIT
 
 
 
-VALDEZ,HARLAN,JR.   845-41-54-4                VISIT DATE: 03/14/08
+    VALDEZ,HARLAN,JR.   845-41-54-4                VISIT DATE: 03/14/08
 
-The patient was seen and examined in the emergency department.  The
+    The patient was seen and examined in the emergency department.  The
 
-patient was seen by the Emergency Medicine resident.  I have
+    patient was seen by the Emergency Medicine resident.  I have
 
-discussed the management with the resident.  I have also seen the
+    discussed the management with the resident.  I have also seen the
 
-patient primarily and reviewed the medical record.  This is a brief
+    patient primarily and reviewed the medical record.  This is a brief
 
-addendum to the medical record.
+    addendum to the medical record.
 
-HISTORY OF PRESENTING COMPLAINT:  Briefly, this is a 45-year-old
+    HISTORY OF PRESENTING COMPLAINT:  Briefly, this is a 45-year-old
 
-male who complains of several days of nausea, vomiting, and left
+    male who complains of several days of nausea, vomiting, and left
 
-lower quadrant discomfort.  He also describes intermittent chest
+    lower quadrant discomfort.  He also describes intermittent chest
 
-pain, which he has had for a number of months without significant
+    pain, which he has had for a number of months without significant
 
-change.  He was sent in from his primary care doctor today with
+    change.  He was sent in from his primary care doctor today with
 
-this pain and was also noted to have some EKG changes.  The patient
+    this pain and was also noted to have some EKG changes.  The patient
 
-has no chest pain at the time of evaluation in the emergency
+    has no chest pain at the time of evaluation in the emergency
 
-department and no shortness of breath.
+    department and no shortness of breath.
 
-REVIEW OF SYSTEMS:  As indicated and otherwise negative.
+    REVIEW OF SYSTEMS:  As indicated and otherwise negative.
 
-PAST MEDICAL HISTORY:  As indicated in the chart.
+    PAST MEDICAL HISTORY:  As indicated in the chart.
 
-SOCIAL HISTORY AND FAMILY HISTORY:  As indicated in the chart.
+    SOCIAL HISTORY AND FAMILY HISTORY:  As indicated in the chart.
 
-PHYSICAL EXAMINATION:  On physical examination, the patient is very
+    PHYSICAL EXAMINATION:  On physical examination, the patient is very
 
-well-appearing, a smiling, very pleasant gentleman in no acute
+    well-appearing, a smiling, very pleasant gentleman in no acute
 
-distress.  The blood pressure is 119/90, the pulse 82, and the
+    distress.  The blood pressure is 119/90, the pulse 82, and the
 
-temperature 97.9 degrees.  Normocephalic and atraumatic.  The chest
+    temperature 97.9 degrees.  Normocephalic and atraumatic.  The chest
 
-is clear to auscultation.  The heart has a regular rate and rhythm.
+    is clear to auscultation.  The heart has a regular rate and rhythm.
 
-The abdomen is soft.  He has left lower quadrant tenderness.  He
+    The abdomen is soft.  He has left lower quadrant tenderness.  He
 
-also, of note on cardiovascular examination, has a soft murmur
+    also, of note on cardiovascular examination, has a soft murmur
 
-which he says he has had since childhood.  The extremities are
+    which he says he has had since childhood.  The extremities are
 
-normal.  The neurologic examination is non-focal.
+    normal.  The neurologic examination is non-focal.
 
-THERAPY RENDERED/COURSE IN ED:  This is a gentleman with abdominal
+    THERAPY RENDERED/COURSE IN ED:  This is a gentleman with abdominal
 
-pain who will receive a CAT scan to rule out diverticulitis.  He
+    pain who will receive a CAT scan to rule out diverticulitis.  He
 
-has also had some non-specific ST changes on his EKG.  He is
+    has also had some non-specific ST changes on his EKG.  He is
 
-pain-free at this time.  He does not describe a classic exertional
+    pain-free at this time.  He does not describe a classic exertional
 
-pattern for his chest pain, but given that he is a diabetic and
+    pattern for his chest pain, but given that he is a diabetic and
 
-with EKG changes, he will also be admitted for rule out MI.  A CT
+    with EKG changes, he will also be admitted for rule out MI.  A CT
 
-is pending at the time of this dictation.
+    is pending at the time of this dictation.
 
-DISPOSITION (including condition upon discharge):  As above.  The
+    DISPOSITION (including condition upon discharge):  As above.  The
 
-patient's condition is currently stable.
+    patient's condition is currently stable.
 
-___________________________________                    CK498/89095
+    ___________________________________                    CK498/89095
 
-JAY CARROLL, M.D.  JC72                                 D:03/14/08
+    JAY CARROLL, M.D.  JC72                                 D:03/14/08
 
-                                                       T:03/14/08
+                                                           T:03/14/08
 
-Dictated by:  JAY CARROLL, M.D.  JC72
+    Dictated by:  JAY CARROLL, M.D.  JC72
 '''
 
 ehr = '''
@@ -188,8 +186,8 @@ ehr = '''
     He lives in 1 Burke Rd, Camberwell
     His phone number is 0566 223 999
     Peter's Australian tax file number is 213 824 911
-
 '''
+
 text = '''{
     "items": [
         {

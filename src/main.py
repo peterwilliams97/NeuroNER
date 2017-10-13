@@ -222,7 +222,7 @@ def parse_arguments(arguments=None):
           arguments the arguments, optionally given as argument
     '''
     parser = argparse.ArgumentParser(description='''NeuroNER CLI''', formatter_class=RawTextHelpFormatter)
-    parser.add_argument('--parameters_filepath', required=False, default=os.path.join('.','parameters.ini'), help='The parameters file')
+    parser.add_argument('--parameters_filepath', required=False, default=os.path.join('.', 'parameters.ini'), help='The parameters file')
 
     argument_default_value = 'argument_default_dummy_value_please_ignore_d41d8cd98f00b204e9800998ecf8427e'
     parser.add_argument('--character_embedding_dimension', required=False, default=argument_default_value, help='')

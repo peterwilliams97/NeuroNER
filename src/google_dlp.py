@@ -24,7 +24,6 @@ from collections import defaultdict
 import glob
 import os
 from utils import read_file, write_file
-# from pprint import pprint
 
 
 def run_command(cmd):
@@ -40,9 +39,6 @@ def get_access_token():
         print('-' * 80)
         print(stderr)
         raise CalledProcessError(rc, cmd)
-    # print(type(stdout))
-    # print(stdout)
-    # print(str(stdout, 'utf-8'))
     access_token = str(stdout, 'utf-8').strip('\n').strip()
     return access_token
 
@@ -61,21 +57,6 @@ def get_headers():
     }
     return headers
 
-
-# json_req = '''{
-#     "items": [
-#         {
-#             "type": "text/plain",
-#             "value": "%s",
-#         },
-#     ],
-#     "inspectConfig": {
-#         "infoTypes": [],
-#         "minLikelihood": "LIKELIHOOD_UNSPECIFIED",
-#          "maxFindings": 0,
-#         "includeQuote": true
-#     }
-# }'''
 
 dict_req = {
     "items": [
@@ -131,6 +112,9 @@ def process_file(path, path_out):
 
 
 def process_dir(data_dir, results_dir):
+    """Call Google DLP inspect on all the *.txt documents in `data_dir` and write the resulting
+        json to `results_dir`
+    """
     assert os.path.exists(data_dir), data_dir
     os.makedirs(results_dir, exist_ok=True)
 
@@ -148,24 +132,15 @@ def inspect_result(path):
 
     with open(path, 'r') as ff:
         d = json.load(ff)
-    # print('d=%s' % type(d))
-    # pprint(d)
     results = d['results']
-    # print('results=%s' % type(results))
-    # pprint(results)
+
     for i, r in enumerate(results):
-        # print('results[%d]=%s %d' % (i, type(r), len(r)))
-        # pprint(r)
         if 'findings' not in r:
             continue
         findings = r['findings']
-        # print('findings=%s %d' % (type(findings), len(findings)))
-        # pprint(findings)
+
         for j, f in enumerate(findings):
             print('findings[%d]=%s %d' % (j, type(f), len(f)))
-            # pprint(f)
-
-            # print(i, j, f['infoType'])
             t = f['infoType']['name']
             quote = f['quote']
             infoTypes[t].append(quote)
@@ -181,6 +156,8 @@ def list2freq(quotes):
 
 
 def analyze_results(results_dir):
+    """Do some analysis on the *.json files written to `results_dir` by process_dir()
+    """
     json_filepaths = sorted(glob.glob(os.path.join(results_dir, '*.json')))
     typeQuotes = defaultdict(list)
     for path in json_filepaths:
