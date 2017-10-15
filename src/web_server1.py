@@ -67,74 +67,63 @@ def markup(text_path, ann_path):
     write_file('blah.html', marked)
 
 
-def sort_texts(texts):
-    text_count = defaultdict(int)
-    text_unique = []
-    for text in texts:
-        if text not in text_count:
-            text_unique.append(text)
-        text_count[text] += 1
-
-    def key(text):
-        return -text_count[text], text_unique.index(text)
-
-    return sorted(text_count, key=key)
-
-
-if False:
-    texts = ['a', 'b', 'b', 'c']
-    print(sort_texts(texts))
-    assert False
-
-
-def summarize(entities, max_texts=20):
+def summarize(entities, max_texts=5):
     summary = defaultdict(list)
     for e in entities:
         summary[e['type']].append(e['text'])
 
     def key(tp):
-        return len(summary[tp]), tp
+        return -len(summary[tp]), tp
 
     print('-' * 80)
-    for i, tp in enumerate(sorted(summary)):
+    for i, tp in enumerate(sorted(summary, key=key)):
         texts = summary[tp]
-        print('%2d: %20s: %4d %s' % (i, tp, len(texts), sort_texts(texts)[:max_texts]))
+        print('%2d: %20s: %4d %s' % (i, tp, len(texts), texts[:max_texts]))
 
 
-def predict(path):
-    """ NeuroNER main method
-    Args:
-        parameters_filepath the path to the parameters file
-        output_folder the path to the output folder
+def predict(nn, path):
+    """
     """
     t0 = clock()
     pdftotext(path, path_txt)
     t1 = clock()
-    files = list(glob(os.path.join(dataset_text_folder, '*')))
-    print('files=%d %s' % (len(files), files))
-    assert files
-
-    nn = NeuroNER(parameters_filepath=parameters_filepath)
     text = read_file(path_txt)
     entities = nn.predict(text)
-    # nn.fit()
-    nn.close()
     t2 = clock()
-    print('*' * 80)
-    print(path, len(text))
-    print('pdftotext=%4.1f sec' % (t1 - t0))
-    print('  predict=%4.1f sec' % (t2 - t1))
-    print('    total=%4.1f sec' % (t2 - t0))
-    summarize(entities)
-    print(nn.stats_graph_folder_)
+    return text, entities, [t0, t1, t2]
 
 
-# predict('/Users/pcadmin/testdata/LIDS_TO_.pdf')
-# predict('/Users/pcadmin/testdata/PaperCutMF-Top-10-Reasons.pdf')
-# predict('/Users/pcadmin/testdata/Spatial Transformer Networks.pdf')
-predict('/Users/pcadmin/testdata/cover_and_thesis.pdf')
+def predict_list(path_list):
+    """
+    """
+    os.makedirs(dataset_text_folder, exist_ok=True)
+    files = list(glob(os.path.join(dataset_text_folder, '*')))
+    print('files=%d %s' % (len(files), files))
+    # assert files
+    nn = NeuroNER(parameters_filepath=parameters_filepath)
+    results = {}
+    for path in path_list:
+        text, entities, times = predict(nn, path)
+        results[path] = (text, entities, times)
+    nn.close()
+    files = list(glob(os.path.join(dataset_text_folder, '*')))
+    print('!' * 80)
+    print('files=%d %s' % (len(files), files))
+    assert files
+    for i, path in enumerate(path_list):
+        text, entities, (t0, t1, t2) = results[path]
+        print('*' * 80)
+        print('%3d: %5d %s' % (i, len(text), path))
+        print('pdftotext=%4.1f sec' % (t1 - t0))
+        print('  predict=%4.1f sec' % (t2 - t1))
+        print('    total=%4.1f sec' % (t2 - t0))
+        summarize(entities)
+    # print(nn.stats_graph_folder_)
 
 
+path_list = list(glob('/Users/pcadmin/testdata/*.pdf'))
+predict_list(path_list[:1])
+assert False
 markup('/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.txt',
        '/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.ann')
 assert False

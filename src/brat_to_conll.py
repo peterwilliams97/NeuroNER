@@ -5,6 +5,7 @@ import codecs
 import spacy
 import utils_nlp
 import json
+from pprint import pprint
 from pycorenlp import StanfordCoreNLP
 import utils
 
@@ -95,7 +96,7 @@ def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
                 entity['text'] = ' '.join(anno[4:])
                 if verbose:
                     print("entity: {0}".format(entity))
-                # Check compatibility between brat text and anootation
+                # Check compatibility between brat text and annotation
                 if utils_nlp.replace_unicode_whitespaces_with_ascii_whitespace(text[entity['start']:entity['end']]) != \
                    utils_nlp.replace_unicode_whitespaces_with_ascii_whitespace(entity['text']):
                     print("Warning: brat text and annotation do not match.")
@@ -111,7 +112,7 @@ def get_entities_from_brat(text_filepath, annotation_filepath, verbose=False):
 
 def check_brat_annotation_and_text_compatibility(brat_folder):
     '''
-    Check if brat annotation and text files are compatible.
+        Check if brat annotation and text files are compatible.
     '''
     dataset_type = os.path.basename(brat_folder)
     print("Checking the validity of BRAT-formatted {0} set... ".format(dataset_type), end='')
@@ -131,6 +132,7 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
         Assumes '.txt' and '.ann' files are in the input_folder.
         Checks for the compatibility between .txt and .ann at the same time.
     '''
+    # assert False, (input_folder, output_filepath, tokenizer, language)
     if tokenizer == 'spacy':
         spacy_nlp = spacy.load(language)
     elif tokenizer == 'stanford':
@@ -145,7 +147,7 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
     for text_filepath in text_filepaths:
         base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
         annotation_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann')
-        # create annotation file if it does not exist
+        # create empty annotation file if it does not exist. Why?
         if not os.path.exists(annotation_filepath):
             codecs.open(annotation_filepath, 'w', 'UTF-8').close()
 

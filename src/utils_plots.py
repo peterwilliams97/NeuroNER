@@ -24,7 +24,7 @@ def get_cmap():
         if ind < 128 or ind > 210:
             continue
         for x in cmap(ind)[:3]:
-            c.append(min(1,  x * alpha))
+            c.append(min(1, x * alpha))
         colors.append(tuple(c))
     my_cmap = matplotlib.colors.ListedColormap(colors, name='my_name')
     return my_cmap
@@ -74,10 +74,10 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     if remove_diagonal:
         matrix = np.copy(AUC)
         np.fill_diagonal(matrix, 0)
-        if len(xticklabels)>2:
-            matrix[:,-1] = 0
+        if len(xticklabels) > 2:
+            matrix[:, -1] = 0
             matrix[-1, :] = 0
-        values= matrix.flatten()
+        values = matrix.flatten()
     else:
         values = AUC.flatten()
     vmin = values.min()
@@ -102,7 +102,7 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     plt.ylabel(ylabel)
 
     # Remove last blank column
-    plt.xlim((0, AUC.shape[1]) )
+    plt.xlim((0, AUC.shape[1]))
 
     # Turn off all the ticks
     ax = plt.gca()
@@ -151,7 +151,7 @@ def plot_classification_report(classification_report, title='Classification repo
             plotMat.append([float(classification_report[label][x]) for x in ["precision", "recall", "f1"]])
     else:
         lines = classification_report.split('\n')
-        for line in lines[2 : (len(lines) - 1)]:
+        for line in lines[2:(len(lines) - 1)]:
             t = line.strip().replace('avg / total', 'micro-avg').split()
             if len(t) < 2:
                 continue

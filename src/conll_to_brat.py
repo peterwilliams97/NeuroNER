@@ -65,8 +65,7 @@ def check_compatibility_between_conll_and_brat_text(conll_filepath, brat_folder)
 
     '''
     dataset_type = utils.get_basename_without_extension(conll_filepath)
-    print("Checking compatibility between CONLL and BRAT for {0} set ... ".format(dataset_type),
-           end='')
+    print("Checking compatibility between CONLL and BRAT for {0} set ... ".format(dataset_type), end='')
     print('**** conll_filepath=%s' % conll_filepath)
     conll_file = codecs.open(conll_filepath, 'r', 'UTF-8')
 

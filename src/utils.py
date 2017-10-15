@@ -1,13 +1,13 @@
 '''
     Miscellaneous utility functions
 '''
-import collections
 import operator
 import os
 import time
 import datetime
 import shutil
 import codecs
+from collections import OrderedDict
 
 
 def order_dictionary(dictionary, mode, reverse=False):
@@ -19,19 +19,19 @@ def order_dictionary(dictionary, mode, reverse=False):
 
     if mode == 'key':
         return MyOrderedDict(sorted(dictionary.items(),
-                                              key=operator.itemgetter(0),
-                                              reverse=reverse))
+                                    key=operator.itemgetter(0),
+                                    reverse=reverse))
     elif mode == 'value':
         return MyOrderedDict(sorted(dictionary.items(),
-                                              key=operator.itemgetter(1),
-                                              reverse=reverse))
+                                    key=operator.itemgetter(1),
+                                    reverse=reverse))
     elif mode == 'key_value':
         return MyOrderedDict(sorted(dictionary.items(),
-                                              reverse=reverse))
+                                    reverse=reverse))
     elif mode == 'value_key':
         return MyOrderedDict(sorted(dictionary.items(),
-                                              key=lambda x: (x[1], x[0]),
-                                              reverse=reverse))
+                                    key=lambda x: (x[1], x[0]),
+                                    reverse=reverse))
     else:
         raise ValueError("Unknown mode. Should be 'key' or 'value'")
 
@@ -82,8 +82,9 @@ def create_folder_if_not_exists(directory):
     '''
         Create the folder if it doesn't exist already.
     '''
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    print('***create_folder_if_not_exists', directory)
+    # assert 'phi_' not in directory
+    os.makedirs(directory, exist_ok=True)
 
 
 def get_current_milliseconds():
@@ -102,14 +103,14 @@ def get_current_time_in_seconds():
 
 def get_current_time_in_miliseconds():
     '''
-    http://stackoverflow.com/questions/5998245/get-current-time-in-milliseconds-in-python
+        http://stackoverflow.com/questions/5998245/get-current-time-in-milliseconds-in-python
     '''
     return(get_current_time_in_seconds() + '-' + str(datetime.datetime.now().microsecond))
 
 
 def convert_configparser_to_dictionary(config):
     '''
-    http://stackoverflow.com/questions/1773793/convert-configparser-items-to-dictionary
+        http://stackoverflow.com/questions/1773793/convert-configparser-items-to-dictionary
     '''
     my_config_parser_dict = {s: dict(config.items(s)) for s in config.sections()}
     return my_config_parser_dict
@@ -125,7 +126,7 @@ def get_parameter_to_section_of_configparser(config):
 
 def copytree(src, dst, symlinks=False, ignore=None):
     '''
-    http://stackoverflow.com/questions/1868714/how-do-i-copy-an-entire-directory-of-files-into-an-existing-directory-using-pyth
+        http://stackoverflow.com/questions/1868714/how-do-i-copy-an-entire-directory-of-files-into-an-existing-directory-using-pyth
     '''
     for item in os.listdir(src):
         s = os.path.join(src, item)
@@ -155,9 +156,6 @@ def read_file(text_filepath):
 def write_file(text_filepath, text):
     with codecs.open(text_filepath, 'w', 'UTF-8') as f:
         f.write(text)
-
-
-from collections import OrderedDict
 
 
 class MyOrderedDict(OrderedDict):

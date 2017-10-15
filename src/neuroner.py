@@ -153,9 +153,9 @@ class NeuroNER(object):
         dataset_brat_folders = {}
         for dataset_type in dataset_types:
             dataset_filepaths[dataset_type] = os.path.join(parameters['dataset_text_folder'],
-                '{0}.txt'.format(dataset_type))
+                                                           '{0}.txt'.format(dataset_type))
             dataset_brat_folders[dataset_type] = os.path.join(parameters['dataset_text_folder'],
-                dataset_type)
+                                                              dataset_type)
             dataset_compatible_with_brat_filepath = os.path.join(parameters['dataset_text_folder'],
                 '{0}_compatible_with_brat.txt'.format(dataset_type))
 
@@ -187,6 +187,7 @@ class NeuroNER(object):
                 # Brat text files exist
                 if (os.path.exists(dataset_brat_folders[dataset_type]) and
                         len(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))) > 0):
+
                     dataset_filepath_for_tokenizer = os.path.join(parameters['dataset_text_folder'],
                             '{0}_{1}.txt'.format(dataset_type, parameters['tokenizer']))
                     if os.path.exists(dataset_filepath_for_tokenizer):
@@ -198,11 +199,17 @@ class NeuroNER(object):
                                 parameters['tokenizer'], parameters['spacylanguage'])
                     dataset_filepaths[dataset_type] = dataset_filepath_for_tokenizer
 
+                    print('!!!', dataset_brat_folders[dataset_type])
+                    print('!!!', list(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))))
+                    print('!!!', dataset_filepath_for_tokenizer, os.path.exists(dataset_filepath_for_tokenizer))
+                    print('!!!', dataset_brat_folders[dataset_type])
+                    # assert False
+
                 # Brat text files do not exist
                 else:
                     del dataset_filepaths[dataset_type]
                     del dataset_brat_folders[dataset_type]
-                    print('!@#$ 1',dataset_type)
+                    print('!@#$ 1', dataset_type)
                     continue
 
             if parameters['tagging_format'] == 'bioes':
@@ -293,7 +300,7 @@ class NeuroNER(object):
 
         # Initialize parameters
         parameters, conf_parameters = self._load_parameters(arguments['parameters_filepath'],
-                arguments=arguments)
+                                                            arguments=arguments)
         dataset_filepaths, dataset_brat_folders = self._get_valid_dataset_filepaths(parameters)
         self._check_parameter_compatiblity(parameters, dataset_filepaths)
         print('dataset_filepaths=%s' % dataset_filepaths)
@@ -362,6 +369,8 @@ class NeuroNER(object):
         results['execution_details']['num_epochs'] = 0
         results['model_options'] = copy.copy(parameters)
 
+        self.stats_graph_folder_ = stats_graph_folder
+        assert False, stats_graph_folder
         model_folder = os.path.join(stats_graph_folder, 'model')
         utils.create_folder_if_not_exists(model_folder)
         with open(os.path.join(model_folder, 'parameters.ini'), 'w') as f:
@@ -487,7 +496,7 @@ class NeuroNER(object):
             writers[dataset_type].close()
 
     def predict(self, text):
-        assert False
+        # assert False
         self.prediction_count += 1
 
         if self.prediction_count == 1:
@@ -528,12 +537,12 @@ class NeuroNER(object):
 
         # Print and output result
         text_filepath = os.path.join(self.stats_graph_folder, 'brat', 'deploy',
-            os.path.basename(dataset_brat_deploy_filepath))
+                                     os.path.basename(dataset_brat_deploy_filepath))
         annotation_filepath = os.path.join(self.stats_graph_folder, 'brat', 'deploy',
             '{0}.ann'.format(utils.get_basename_without_extension(dataset_brat_deploy_filepath)))
         text2, entities = brat_to_conll.get_entities_from_brat(text_filepath, annotation_filepath,
-                verbose=True)
-        assert(text == text2)
+                                                               verbose=True)
+        assert text == text2
         return entities
 
     def get_params(self):
