@@ -119,7 +119,7 @@ def get_valid_dataset_filepaths(parameters):
     dataset_filepaths = {}
     dataset_brat_folders = {}
 
-    print('!!!!dataset_text_folder="%s"' % parameters['dataset_text_folder'])
+    # print('!!!!dataset_text_folder="%s"' % parameters['dataset_text_folder'])
     assert os.path.exists(parameters['dataset_text_folder']), parameters['dataset_text_folder']
 
     for dataset_type in ['train', 'valid', 'test', 'deploy']:

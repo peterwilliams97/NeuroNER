@@ -26,24 +26,37 @@ def quote(s):
     return s
 
 
-def run_command(cmd):
+permission_errors = [
+    'You do not have permission to extract text',
+    'Permission Error'
+]
+
+
+def run_command(cmd, raise_on_error=True):
     # cmd = [quote(s) for s in cmd]
-    print('cmd=%s' % cmd)
+    # print('cmd=%s' % cmd)
 
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
 
     if p.returncode != 0:
+        so = ''
+        se = ''
         if stdout:
             print('~' * 80)
-            print(stdout.decode("utf-8"))
+            so = stdout.decode("utf-8")
+            print(so)
         if stderr:
             print('^' * 80)
-            print(stderr.decode("utf-8"))
-        if 'Permission Error' not in str(stderr):
+            se = stderr.decode("utf-8")
+            print(se)
+
+        if not any(pe in s for s in (so, se) for pe in permission_errors):
             print('-' * 80)
+            print('run_command real error')
             print(' '.join(cmd))
-            raise CalledProcessError(p.returncode, cmd)
+            if raise_on_error:
+                raise CalledProcessError(p.returncode, cmd)
 
     return p.returncode, stdout, stderr
 

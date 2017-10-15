@@ -82,8 +82,6 @@ def create_folder_if_not_exists(directory):
     '''
         Create the folder if it doesn't exist already.
     '''
-    print('***create_folder_if_not_exists', directory)
-    # assert 'phi_' not in directory
     os.makedirs(directory, exist_ok=True)
 
 

@@ -67,6 +67,20 @@ def markup(text_path, ann_path):
     write_file('blah.html', marked)
 
 
+def sort_texts(texts):
+    text_count = defaultdict(int)
+    text_unique = []
+    for text in texts:
+        if text not in text_count:
+            text_unique.append(text)
+        text_count[text] += 1
+
+    def key(text):
+        return -text_count[text], text_unique.index(text)
+
+    return sorted(text_count, key=key)
+
+
 def summarize(entities, max_texts=5):
     summary = defaultdict(list)
     for e in entities:
@@ -78,22 +92,34 @@ def summarize(entities, max_texts=5):
     print('-' * 80)
     for i, tp in enumerate(sorted(summary, key=key)):
         texts = summary[tp]
-        print('%2d: %20s: %4d %s' % (i, tp, len(texts), texts[:max_texts]))
+        print('%2d: %20s: %4d %s' % (i, tp, len(texts), sort_texts(texts)[:max_texts]))
 
 
-def predict(nn, path):
+def predict(nn, path, maxlen=None):
     """
     """
     t0 = clock()
-    pdftotext(path, path_txt)
+    try:
+        pdftotext(path, path_txt)
+        text = read_file(path_txt)
+    except:
+        return '', [], [t0, t0, t0]
+
+    print('predict text=%6d file=%8d path="%s"' % (len(text), os.path.getsize(path), path), flush=True)
+    text = text.strip(' \t\n\r')
+    if maxlen:
+        text = text[:maxlen]
+
+    if not text:
+        return '', [], [t0, t0, t0]
+
     t1 = clock()
-    text = read_file(path_txt)
     entities = nn.predict(text)
     t2 = clock()
     return text, entities, [t0, t1, t2]
 
 
-def predict_list(path_list):
+def predict_list(path_list, maxlen=None):
     """
     """
     os.makedirs(dataset_text_folder, exist_ok=True)
@@ -102,27 +128,56 @@ def predict_list(path_list):
     # assert files
     nn = NeuroNER(parameters_filepath=parameters_filepath)
     results = {}
-    for path in path_list:
-        text, entities, times = predict(nn, path)
-        results[path] = (text, entities, times)
+    try:
+        for i, path in enumerate(path_list):
+            print('~' * 80)
+            print('Processing %d of %d' % (i, len(path_list)), end=': ')
+            text, entities, times = predict(nn, path)
+            results[path] = (text, entities, times)
+    except Exception as e:
+        print('^' * 80)
+        print('Failed to process %s' % path)
+        print(type(e))
+        print(e)
+        raise
     nn.close()
-    files = list(glob(os.path.join(dataset_text_folder, '*')))
+    print('=' * 80)
+    print('Completed %d of %d' % (len(results), len(path_list)))
+
     print('!' * 80)
-    print('files=%d %s' % (len(files), files))
-    assert files
-    for i, path in enumerate(path_list):
+    print('files=%d %s' % (len(path_list), path_list[:5]))
+
+    for i, path in enumerate(path_list[:len(results)]):
         text, entities, (t0, t1, t2) = results[path]
         print('*' * 80)
-        print('%3d: %5d %s' % (i, len(text), path))
+        print('%3d: %5d %8d %s' % (i, len(text), os.path.getsize(path), path))
+        if not text:
+            continue
         print('pdftotext=%4.1f sec' % (t1 - t0))
         print('  predict=%4.1f sec' % (t2 - t1))
-        print('    total=%4.1f sec' % (t2 - t0))
-        summarize(entities)
-    # print(nn.stats_graph_folder_)
+        print('    total=%4.1f sec %4.0f chars/sec ' % ((t2 - t0), len(text) / (t2 - t0)))
+        summarize(entities, max_texts=10)
+
+    all_entities = []
+    all_text_len = 0
+    all_t = 0.0
+    for i, path in enumerate(path_list[:len(results)]):
+        text, entities, (t0, t1, t2) = results[path]
+        all_text_len += len(text)
+        all_entities.extend(entities)
+        all_t += t2 - t0
+    print('#' * 80)
+    print('All files: %d files length=%d' % (len(results), all_text_len))
+    if all_text_len:
+        print('    total=%4.1f sec %4.0f chars/sec ' % (all_t, all_text_len / all_t))
+        summarize(all_entities, max_texts=50)
+    # print(nn.stat s_graph_folder_)
 
 
-path_list = list(glob('/Users/pcadmin/testdata/*.pdf'))
-predict_list(path_list[:1])
+path_list = list(glob('/Users/pcadmin/testdata/*.pdf', recursive=True))
+print('all files=%d' % len(path_list))
+path_list.sort(key=lambda path: (-os.path.getsize(path), path))
+predict_list(path_list, maxlen=1000 * 1000)
 assert False
 markup('/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.txt',
        '/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.ann')

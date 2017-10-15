@@ -199,11 +199,11 @@ class NeuroNER(object):
                                 parameters['tokenizer'], parameters['spacylanguage'])
                     dataset_filepaths[dataset_type] = dataset_filepath_for_tokenizer
 
-                    print('!!!', dataset_brat_folders[dataset_type])
-                    print('!!!', list(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))))
-                    print('!!!', dataset_filepath_for_tokenizer, os.path.exists(dataset_filepath_for_tokenizer))
-                    print('!!!', dataset_brat_folders[dataset_type])
-                    # assert False
+                    # print('!!!', dataset_brat_folders[dataset_type])
+                    # print('!!!', list(glob.glob(os.path.join(dataset_brat_folders[dataset_type], '*.txt'))))
+                    # print('!!!', dataset_filepath_for_tokenizer, os.path.exists(dataset_filepath_for_tokenizer))
+                    # print('!!!', dataset_brat_folders[dataset_type])
+                    # # assert False
 
                 # Brat text files do not exist
                 else:
@@ -232,9 +232,9 @@ class NeuroNER(object):
             if 'train' in dataset_filepaths and 'valid' in dataset_filepaths:
                 print("WARNING: train and valid set exist in the specified dataset folder, but train_model "
                       "is set to FALSE: {0}".format(parameters['dataset_text_folder']))
-            if 'test' not in dataset_filepaths and 'deploy' not in dataset_filepaths:
-                raise IOError("For prediction mode, either test set and deploy set must exist in the "
-                              "specified dataset folder: {0}".format(parameters['dataset_text_folder']))
+            # if 'test' not in dataset_filepaths and 'deploy' not in dataset_filepaths:
+            #     raise IOError("For prediction mode, either test set and deploy set must exist in the "
+            #                   "specified dataset folder: {0}".format(parameters['dataset_text_folder']))
         else:  # if not parameters['train_model'] and not parameters['use_pretrained_model']:
             raise ValueError('At least one of train_model and use_pretrained_model must be set to True.')
 
@@ -513,14 +513,17 @@ class NeuroNER(object):
                 os.remove(filepath)
         ### Create brat folder and file
         dataset_brat_deploy_folder = os.path.join(self.parameters['dataset_text_folder'], dataset_type)
+        # print('***dataset_brat_deploy_folder=%s' % dataset_brat_deploy_folder)
         utils.create_folder_if_not_exists(dataset_brat_deploy_folder)
         dataset_brat_deploy_filepath = os.path.join(dataset_brat_deploy_folder,
                                         'temp_{0}.txt'.format(str(self.prediction_count).zfill(5)))
+        # print('***dataset_brat_deploy_filepath=%s' % dataset_brat_deploy_filepath)
         with codecs.open(dataset_brat_deploy_filepath, 'w', 'UTF-8') as f:
             f.write(text)
+        assert os.path.exists(dataset_brat_deploy_filepath), dataset_brat_deploy_filepath
         ### Update deploy filepaths
         dataset_filepaths, dataset_brat_folders = self._get_valid_dataset_filepaths(self.parameters,
-            dataset_types=[dataset_type])
+                                                         dataset_types=[dataset_type])
         self.dataset_filepaths.update(dataset_filepaths)
         self.dataset_brat_folders.update(dataset_brat_folders)
         ### Update the dataset for the new deploy set
@@ -540,8 +543,7 @@ class NeuroNER(object):
                                      os.path.basename(dataset_brat_deploy_filepath))
         annotation_filepath = os.path.join(self.stats_graph_folder, 'brat', 'deploy',
             '{0}.ann'.format(utils.get_basename_without_extension(dataset_brat_deploy_filepath)))
-        text2, entities = brat_to_conll.get_entities_from_brat(text_filepath, annotation_filepath,
-                                                               verbose=True)
+        text2, entities = brat_to_conll.get_entities_from_brat(text_filepath, annotation_filepath)
         assert text == text2
         return entities
 

@@ -26,6 +26,7 @@ from neuroner import NeuroNER
 from make_text_corpus import pdftotext
 from brat_to_conll import get_entities_from_brat
 from utils import write_file, read_file
+from sys import argv
 
 
 dataset_root = '/Users/pcadmin/phi.data'
@@ -116,7 +117,11 @@ def predict(path):
 
     nn = NeuroNER(parameters_filepath=parameters_filepath)
     text = read_file(path_txt)
-    entities = nn.predict(text)
+    text = text.strip(' \t\n\r')
+    if not text:
+        entities = []
+    else:
+        entities = nn.predict(text)
     # nn.fit()
     nn.close()
     t2 = clock()
@@ -132,7 +137,9 @@ def predict(path):
 # predict('/Users/pcadmin/testdata/LIDS_TO_.pdf')
 # predict('/Users/pcadmin/testdata/PaperCutMF-Top-10-Reasons.pdf')
 # predict('/Users/pcadmin/testdata/Spatial Transformer Networks.pdf')
-predict('/Users/pcadmin/testdata/cover_and_thesis.pdf')
+# predict('/Users/pcadmin/testdata/cover_and_thesis.pdf')
+# predict('/Users/pcadmin/testdata/01.pdf')
+predict(argv[1])
 
 
 markup('/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.txt',
