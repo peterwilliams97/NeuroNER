@@ -232,9 +232,9 @@ class NeuroNER(object):
             if 'train' in dataset_filepaths and 'valid' in dataset_filepaths:
                 print("WARNING: train and valid set exist in the specified dataset folder, but train_model "
                       "is set to FALSE: {0}".format(parameters['dataset_text_folder']))
-            if 'test' not in dataset_filepaths and 'deploy' not in dataset_filepaths:
-                raise IOError("For prediction mode, either test set and deploy set must exist in the "
-                              "specified dataset folder: {0}".format(parameters['dataset_text_folder']))
+            # if 'test' not in dataset_filepaths and 'deploy' not in dataset_filepaths:
+            #     raise IOError("For prediction mode, either test set and deploy set must exist in the "
+            #                   "specified dataset folder: {0}".format(parameters['dataset_text_folder']))
         else:  # if not parameters['train_model'] and not parameters['use_pretrained_model']:
             raise ValueError('At least one of train_model and use_pretrained_model must be set to True.')
 
