@@ -23,7 +23,7 @@ from time import clock
 from collections import defaultdict
 import shutil
 from neuroner import NeuroNER
-from make_text_corpus import pdftotext
+from make_text_corpus import pdftotext, dehyphenate
 from brat_to_conll import get_entities_from_brat
 from utils import write_file, read_file
 
@@ -102,6 +102,7 @@ def predict(nn, path, maxlen=None):
     try:
         pdftotext(path, path_txt)
         text = read_file(path_txt)
+        text = dehyphenate(text)
     except:
         return '', [], [t0, t0, t0]
 
@@ -170,14 +171,14 @@ def predict_list(path_list, maxlen=None):
     print('All files: %d files length=%d' % (len(results), all_text_len))
     if all_text_len:
         print('    total=%4.1f sec %4.0f chars/sec ' % (all_t, all_text_len / all_t))
-        summarize(all_entities, max_texts=50)
+        summarize(all_entities, max_texts=100)
     # print(nn.stat s_graph_folder_)
 
 
 path_list = list(glob('/Users/pcadmin/testdata/*.pdf', recursive=True))
 print('all files=%d' % len(path_list))
 path_list.sort(key=lambda path: (-os.path.getsize(path), path))
-predict_list(path_list, maxlen=1000 * 1000)
+predict_list(path_list, maxlen=100 * 1000)
 assert False
 markup('/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.txt',
        '/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.ann')

@@ -1,6 +1,6 @@
-'''
-    Miscellaneous utility functions
-'''
+"""
+    PDF to text conversion
+"""
 import os
 from glob import glob
 from collections import defaultdict
@@ -238,6 +238,10 @@ def unbreak(m):
     words = [w00, w1n, w2n]
     _, best = max(probs)
 
+    # assert m.group(1) != 'indi' or words[best] == 'individual\n', '"%s" %s %s %s "%s"' % (
+    #                        m.group(0), m.groups(), [p0, p1, p2],
+    #                        best, words[best])
+
     if best != 2:
         hyphenated.add((w1, w2))
     return words[best]
@@ -254,7 +258,7 @@ def dehyphenate(text):
         over the Internet
     """
     assert isinstance(text, str), type(text)
-    print([type(x) for x in (text, RE_BREAK, unbreak)])
+    # print([type(x) for x in (text, RE_BREAK, unbreak)])
     unbroke = RE_BREAK.sub(unbreak, text)
     return unbroke
 

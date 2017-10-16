@@ -36,9 +36,9 @@ class Dataset(object):
 
     def _parse_dataset(self, dataset_filepath):
 
-        token_count = collections.defaultdict(lambda: 0)
-        label_count = collections.defaultdict(lambda: 0)
-        character_count = collections.defaultdict(lambda: 0)
+        token_count = collections.defaultdict(int)
+        label_count = collections.defaultdict(int)
+        character_count = collections.defaultdict(int)
 
         line_count = -1
         tokens = []
@@ -46,37 +46,37 @@ class Dataset(object):
         new_token_sequence = []
         new_label_sequence = []
         if dataset_filepath:
+            print('***dataset_filepath=%s' % dataset_filepath)
             assert os.path.exists(dataset_filepath), dataset_filepath
-            f = codecs.open(dataset_filepath, 'r', 'UTF-8')
+            with codecs.open(dataset_filepath, 'r', 'UTF-8') as f:
+                for line in f:
+                    line_count += 1
+                    line = line.strip().split(' ')
+                    if len(line) == 0 or len(line[0]) == 0 or '-DOCSTART-' in line[0]:
+                        if len(new_token_sequence) > 0:
+                            labels.append(new_label_sequence)
+                            tokens.append(new_token_sequence)
+                            new_token_sequence = []
+                            new_label_sequence = []
+                        continue
+                    token = str(line[0])
+                    label = str(line[-1])
+                    token_count[token] += 1
+                    label_count[label] += 1
 
-            for line in f:
-                line_count += 1
-                line = line.strip().split(' ')
-                if len(line) == 0 or len(line[0]) == 0 or '-DOCSTART-' in line[0]:
-                    if len(new_token_sequence) > 0:
-                        labels.append(new_label_sequence)
-                        tokens.append(new_token_sequence)
-                        new_token_sequence = []
-                        new_label_sequence = []
-                    continue
-                token = str(line[0])
-                label = str(line[-1])
-                token_count[token] += 1
-                label_count[label] += 1
+                    new_token_sequence.append(token)
+                    new_label_sequence.append(label)
 
-                new_token_sequence.append(token)
-                new_label_sequence.append(label)
+                    for character in token:
+                        character_count[character] += 1
 
-                for character in token:
-                    character_count[character] += 1
+                    if self.debug and line_count > 200:
+                        break  # for debugging purposes
 
-                if self.debug and line_count > 200:
-                    break  # for debugging purposes
+                if len(new_token_sequence) > 0:
+                    labels.append(new_label_sequence)
+                    tokens.append(new_token_sequence)
 
-            if len(new_token_sequence) > 0:
-                labels.append(new_label_sequence)
-                tokens.append(new_token_sequence)
-            f.close()
         return labels, tokens, token_count, label_count, character_count
 
     def _convert_to_indices(self, dataset_types):
@@ -109,8 +109,10 @@ class Dataset(object):
                     for character in token] for token in token_sequence])
                 token_lengths[dataset_type].append([len(token) for token in token_sequence])
                 longest_token_length_in_sequence = max(token_lengths[dataset_type][-1])
-                character_indices_padded[dataset_type].append([utils.pad_list(temp_token_indices,
-                    longest_token_length_in_sequence, self.PADDING_CHARACTER_INDEX)
+                character_indices_padded[dataset_type].append(
+                    [utils.pad_list(temp_token_indices,
+                                    longest_token_length_in_sequence,
+                                    self.PADDING_CHARACTER_INDEX)
                     for temp_token_indices in character_indices[dataset_type][-1]])
 
             label_indices[dataset_type] = []
@@ -155,7 +157,7 @@ class Dataset(object):
         #     print('len(label_vector_indices[\'train\']): {0}'.format(len(label_vector_indices['train'])))
 
         return (token_indices, label_indices, character_indices_padded, character_indices, token_lengths,
-            characters, label_vector_indices)
+                characters, label_vector_indices)
 
     def update_dataset(self, dataset_filepaths, dataset_types):
         '''

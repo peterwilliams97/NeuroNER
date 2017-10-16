@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import sklearn.metrics
+from time import clock
 from evaluate import remap_labels
 import codecs
 import utils_nlp
@@ -46,13 +47,16 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
     output_file = codecs.open(output_filepath, 'w', 'UTF-8')
     original_conll_file = codecs.open(dataset_filepaths[dataset_type], 'r', 'UTF-8')
 
+    print('@@@token_indices=%d' % len(dataset.token_indices[dataset_type]))
     for i in range(len(dataset.token_indices[dataset_type])):
+        # t0 = clock()
+        # print('@@#token_indices[%d]=%d' % (i, len(dataset.token_indices[dataset_type][i])))
         feed_dict = {
             model.input_token_indices: dataset.token_indices[dataset_type][i],
             model.input_token_character_indices: dataset.character_indices_padded[dataset_type][i],
             model.input_token_lengths: dataset.token_lengths[dataset_type][i],
             model.input_label_indices_vector: dataset.label_vector_indices[dataset_type][i],
-            model.dropout_keep_prob: 1.
+            model.dropout_keep_prob: 1.  # <= No dropout !@#$
         }
         unary_scores, predictions = sess.run([model.unary_scores, model.predictions], feed_dict)
         if parameters['use_crf']:
@@ -88,6 +92,9 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
 
         all_predictions.extend(predictions)
         all_y_true.extend(dataset.label_indices[dataset_type][i])
+
+        # t1 = clock()
+        # print('$$$ i=%3d t=%.3f all_predictions=%d' % (i, t1 - t0, len(all_predictions)))
 
     output_file.close()
     original_conll_file.close()

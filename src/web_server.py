@@ -23,7 +23,7 @@ from time import clock
 from collections import defaultdict
 import shutil
 from neuroner import NeuroNER
-from make_text_corpus import pdftotext
+from make_text_corpus import pdftotext, dehyphenate
 from brat_to_conll import get_entities_from_brat
 from utils import write_file, read_file
 from sys import argv
@@ -115,9 +115,10 @@ def predict(path):
     print('files=%d %s' % (len(files), files))
     assert files
 
-    nn = NeuroNER(parameters_filepath=parameters_filepath)
     text = read_file(path_txt)
+    text = dehyphenate(text)
     text = text.strip(' \t\n\r')
+    nn = NeuroNER(parameters_filepath=parameters_filepath, verbose=True)
     if not text:
         entities = []
     else:

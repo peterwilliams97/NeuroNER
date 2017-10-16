@@ -506,7 +506,8 @@ class NeuroNER(object):
         # Update the deploy folder, file, and dataset
         dataset_type = 'deploy'
         ### Delete all deployment data
-        for filepath in glob.glob(os.path.join(self.parameters['dataset_text_folder'], '{0}*'.format(dataset_type))):
+        for filepath in glob.glob(os.path.join(self.parameters['dataset_text_folder'],
+                                               '{0}*'.format(dataset_type))):
             if os.path.isdir(filepath):
                 shutil.rmtree(filepath)
             else:
@@ -536,7 +537,7 @@ class NeuroNER(object):
                      self.parameters, self.dataset_filepaths)
         _, _, output_filepaths[dataset_type] = prediction_output
         conll_to_brat.output_brat(output_filepaths, self.dataset_brat_folders, self.stats_graph_folder,
-                overwrite=True)
+                                  overwrite=True)
 
         # Print and output result
         text_filepath = os.path.join(self.stats_graph_folder, 'brat', 'deploy',

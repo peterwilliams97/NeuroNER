@@ -69,7 +69,6 @@ class EntityLSTM(object):
     def __init__(self, dataset, parameters):
 
         self.verbose = False
-
         # Placeholders for input, output and dropout
         self.input_token_indices = tf.placeholder(tf.int32, [None], name="input_token_indices")
         self.input_label_indices_vector = tf.placeholder(tf.float32, [None, dataset.number_of_classes],
@@ -91,9 +90,9 @@ class EntityLSTM(object):
             # Character embedding layer
             with tf.variable_scope("character_embedding"):
                 self.character_embedding_weights = tf.get_variable(
-                    "character_embedding_weights",
-                    shape=[dataset.alphabet_size, parameters['character_embedding_dimension']],
-                    initializer=initializer)
+                        'character_embedding_weights',
+                        shape=[dataset.alphabet_size, parameters['character_embedding_dimension']],
+                        initializer=initializer)
                 embedded_characters = tf.nn.embedding_lookup(self.character_embedding_weights,
                                                              self.input_token_character_indices,
                                                              name='embedded_characters')
@@ -104,8 +103,8 @@ class EntityLSTM(object):
             # Character LSTM layer
             with tf.variable_scope('character_lstm') as vs:
                 character_lstm_output = bidirectional_LSTM(embedded_characters,
-                    parameters['character_lstm_hidden_state_dimension'], initializer,
-                    sequence_length=self.input_token_lengths, output_sequence=False)
+                        parameters['character_lstm_hidden_state_dimension'], initializer,
+                        sequence_length=self.input_token_lengths, output_sequence=False)
                 self.character_lstm_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name)
 
         # Token embedding layer
@@ -123,7 +122,8 @@ class EntityLSTM(object):
             with tf.variable_scope("concatenate_token_and_character_vectors"):
                 if self.verbose:
                     print('embedded_tokens: {0}'.format(embedded_tokens))
-                token_lstm_input = tf.concat([character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
+                token_lstm_input = tf.concat([character_lstm_output, embedded_tokens], axis=1,
+                                             name='token_lstm_input')
                 if self.verbose:
                     print("token_lstm_input: {0}".format(token_lstm_input))
         else:
@@ -250,7 +250,7 @@ class EntityLSTM(object):
         self.saver = tf.train.Saver(max_to_keep=parameters['maximum_number_of_epochs'])
 
     def define_training_procedure(self, parameters):
-        # Define training procedure
+        """Set the optimizer and its parameters"""
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
         if parameters['optimizer'] == 'adam':
             self.optimizer = tf.train.AdamOptimizer(parameters['learning_rate'])
