@@ -12,9 +12,12 @@ import re
 from ngrams import Pw
 
 # Settings
-MAX_DOC_SIZE = 10000
+MAX_DOC_SIZE = -1
 CONVERT_PDF = True
 CLEAN_TEXT = True
+MBYTE = 1024 * 1024
+min_size = 5 * MBYTE
+max_size = 30 * MBYTE
 
 
 def quote(s):
@@ -199,13 +202,15 @@ def corpus_to_text(pdf_dir, text_dir, method=1, keep_dirs=False):
 
     for i, path in enumerate(keepers):
 
-        print('%3d: %s' % (i, path), end=' -> ')
+        size = os.path.getsize(path)
+        print('%3d: %s [%.1f]' % (i, path, size / MBYTE), end=' -> ')
         assert os.path.abspath(path) == path
 
-        name = extract_name(path)
-        path_txt = os.path.join(text_dir, '%s.txt' % name)
-        print(path_txt, end=' ')
-        pdftotext(path, path_txt, method)
+        if min_size <= size <= max_size:
+            name = extract_name(path)
+            path_txt = os.path.join(text_dir, '%s.txt' % name)
+            print(path_txt, end=' ')
+            pdftotext(path, path_txt, method)
         print(flush=True)
 
 
@@ -272,7 +277,8 @@ def clean_file(path, path_cln, min_len=100):
 
     text = dehyphenate(text)
 
-    text = text[:MAX_DOC_SIZE]
+    if MAX_DOC_SIZE > 0:
+        text = text[:MAX_DOC_SIZE]
     if len(text) >= min_len:
         print('-' * 80)
         print(text[:200])
