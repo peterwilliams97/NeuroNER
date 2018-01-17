@@ -3,21 +3,9 @@
 """
 import os
 from glob import glob
-from collections import defaultdict
-import json
+from utils_peter import load_json, save_json, base_name
 from bs4 import BeautifulSoup
 import re
-
-
-def load_json(path):
-    with open(path, 'r') as f:
-        obj = json.load(f)
-    return obj
-
-
-def save_json(path, obj):
-    with open(path, 'w') as f:
-        json.dump(obj, f, indent=4, sort_keys=True)
 
 
 def get_page_summary(summary_path, prefix_len):
@@ -38,11 +26,6 @@ def get_page_texts(summary_path):
     return summary['page_texts']
 
 
-def base_name(path):
-    base = os.path.basename(path)
-    return os.path.splitext(base)[0]
-
-
 def count_same(page_texts, text):
     """`page_texts` is a list of strings that contain `text` as a substring in increasing length
         Returns: Number of items in `page_texts` that are identical to `text`
@@ -55,6 +38,10 @@ def count_same(page_texts, text):
 
 
 def find_empty_pages(path, min_len, max_len):
+    """Find the empty pages in the processed PDF file `path` (created by  make_page_corpus.py
+        )
+
+    """
     page_texts = get_page_texts(path)
     page_texts.sort(key=lambda x: (len(x), x))
     page_texts = [text for text in page_texts if min_len <= len(text)]
@@ -70,6 +57,9 @@ def find_empty_pages(path, min_len, max_len):
 
 
 def find_empty_pages_all(root, max_files):
+    """Analyze all the json files in directory `root` which are created by make_page_corpus.py
+        Reutn
+    """
     path_list = list(glob(os.path.join(root, '*.json')))
     if max_files > 0:
         path_list = path_list[:max_files]

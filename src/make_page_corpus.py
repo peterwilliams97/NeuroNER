@@ -5,32 +5,17 @@ import os
 from glob import glob
 from collections import defaultdict
 import hashlib
-import string
 from subprocess import CalledProcessError, Popen, PIPE
-import utils
 import re
-from ngrams import Pw
-# import jsonlines
-import json
+from utils_peter import save_json
 from html_to_text import update_summary
 
+KBYTE = 1024
+MBYTE = 1024 * 1024
 
 # Settings
-MAX_DOC_SIZE = -1
-CONVERT_PDF = True
-CLEAN_TEXT = True
-MBYTE = 1024 * 1024
-min_size = 5 * MBYTE
-max_size = 30 * MBYTE
-
-
-def quote(s):
-    if not RE_SPACE.search(s):
-        return s
-    s = s.replace('"', '\\"')
-    s = '"%s"' % s
-    print('$$$', s)
-    return s
+min_size = 1 * KBYTE
+max_size = 10 * MBYTE
 
 
 permission_errors = [
@@ -40,9 +25,6 @@ permission_errors = [
 
 
 def run_command(cmd, raise_on_error=True):
-    # cmd = [quote(s) for s in cmd]
-    # print('cmd=%s' % cmd)
-
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
 
@@ -68,35 +50,32 @@ def run_command(cmd, raise_on_error=True):
     return p.returncode, stdout, stderr
 
 
-def pdf_to_pages(pdf):
-    """pdfbox works best"""
-    # tmp = './aaa.txt'
+def pdf_to_pages(pdf_path):
+    """Extract pages from PDF file `pdf_path` using PdfBox
+        Returns: ok, text, pages
+            ok: Analysis succeeded. PDF is valid
+            text: Text of PDF in html format
+            pages: Pages of PDF in html format
+    """
     cmd = ['java', '-jar', 'pdfbox-app-2.0.7.jar', 'ExtractText',
-           '-html', '-console', pdf]
+           '-html', '-console', pdf_path]
     retcode, stdout, stderr = run_command(cmd, raise_on_error=False)
-    # print(' '.join(cmd))
-    # assert False
-    # assert retcode == 0, 'retcode=%d stderr=<%s>' % (retcode, stderr)
     ok = retcode == 0
     if not ok:
         print('FAILURE: retcode=%d stderr=<%s>' % (retcode, stderr))
         return ok, '', []
     text = stdout.decode('utf-8')
-    # <div style="page-break-before:always; page-break-after:always">
     sep = '<div style="page-break-before:always; page-break-after:always">'
     return ok, text, text.split(sep)[1:]
-    # with open(tmp, 'rt') as f:
-    #     text = f.read()
-    # return text
 
 
- # Num Pages: 1
+# Num Pages: 1
 RE_NUMPAGES = re.compile(b'Num Pages:\s+(\d+)')
 
 
-def pdf_num_pages(pdf):
-    """pdfbox works best"""
-    cmd = ['./pdf_info', pdf]
+def pdf_num_pages(pdf_path):
+    """Use Unidoc to count pages in PDF file `pdf_path`"""
+    cmd = ['./pdf_info', pdf_path]
     retcode, stdout, stderr = run_command(cmd, raise_on_error=False)
     ok = retcode == 0
     if not ok:
@@ -105,49 +84,25 @@ def pdf_num_pages(pdf):
     return ok, int(m.group(1))
 
 
-def pdftotext(pdf, output):
-    """Extract text from `pdf`, break it into pages and write summary to 'output"""
-    # n_pages = pdf_num_pages(pdf)
-    ok, text, pages_html = pdf_to_pages(pdf)
+def save_pdf_summary(pdf_path, summary_path):
+    """Extract text from `pdf`, break it into pages and write the summary to 'summary_path
+    """
+    ok, text, pages_html = pdf_to_pages(pdf_path)
     if not ok:
         return
-    page_list = []
-    print(pdf)
-    print(output)
-    # print(n_pages)
-    for page in pages_html:
-        page_list.append(page)
-        # print('-' * 80)
-        # print(i, len(page))
-        # print(page)
+    print('save_pdf_summary: %s->%s' % (pdf_path, summary_path))
 
     summary = {
-        'name': pdf,
+        'name': os.path.basename(pdf_path),
         'n_pages': len(pages_html),
-        'n_chars': sum(len(page) for page in page_list),
-        'pages': page_list,
+        'n_chars': sum(len(page) for page in pages_html),
+        'pages': pages_html,
         'text': text,
     }
     update_summary(summary)
 
-    outpath = os.path.abspath('%s.json' % output)
-    with open(outpath, 'w') as f:
-        json.dump(summary, f, indent=4, sort_keys=True)
-    # with jsonlines.open(outpath, mode='w', sort_keys=True) as f:
-    #     f.write(summary)
-
-    # assert len(pages_html) == n_pages, (len(pages_html), n_pages, outpath)
-
-
-if False:
-    rc, stdout, stderr = run_command(['pdftotext', '/Users/pcadmin/testdata/Forerunner_230_OM_EN.pdf', 'blah.txt'])
-    print(rc)
-    print(stdout)
-    print(stderr)
-    pdftotext('/Users/pcadmin/testdata/Forerunner_230_OM_EN.pdf', 'blah.txt')
-    pdftotext('blah.pdf', 'blah.txt')
-
-    assert False
+    outpath = os.path.abspath('%s.json' % summary_path)
+    save_json(outpath, summary)
 
 
 def sha1_digest(path):
@@ -240,141 +195,34 @@ def corpus_to_keepers(pdf_dir):
     return keepers
 
 
-def corpus_to_text(pdf_dir, text_dir, method=1, keep_dirs=False):
-    """Convert the unique PDF files in `pdf_dir` to file with the same name in `text_dir` using converter
-        specified by `method`. Use method=1
+def corpus_to_text(pdf_dir, summary_dir):
+    """Convert the unique PDF files in `pdf_dir` to file with the same name in `summary_dir`
     """
     keepers = corpus_to_keepers(pdf_dir)
 
-    os.makedirs(text_dir, exist_ok=True)
-    if keep_dirs:
-        directories = sorted({os.path.dirname(os.path.join(text_dir,
-            extract_name(path, start=pdf_dir, whole=True)))
-            for path in keepers})
-        for i, path in enumerate(directories):
-            print('Making directory %d: %s' % (i, path))
-            os.makedirs(path, exist_ok=True)
+    os.makedirs(summary_dir, exist_ok=True)
 
-    for i, path in enumerate(keepers):
+    for i, pdf_path in enumerate(keepers):
 
-        size = os.path.getsize(path)
-        print('%3d: %s [%.1f]' % (i, path, size / MBYTE), end=' -> ')
-        assert os.path.abspath(path) == path
+        size = os.path.getsize(pdf_path)
+        print('%3d: %s [%.1f]' % (i, pdf_path, size / MBYTE), end=' -> ')
+        assert os.path.abspath(pdf_path) == pdf_path
 
         if min_size <= size <= max_size:
-            name = extract_name(path)
-            path_txt = os.path.join(text_dir, name)
-            print(path_txt, end=' ')
-            pdftotext(path, path_txt)
+            name = extract_name(pdf_path)
+            summary_path = os.path.join(summary_dir, '%s.json' % name)
+            print(summary_path, end=' ')
+            save_pdf_summary(pdf_path, summary_path)
         print(flush=True)
 
 
-# RE_SPACE = re.compile(r'[\t ]+', re.MULTILINE | re.DOTALL)
-# punctuation = string.punctuation
-# punctuation = punctuation.replace("-", "")  # don't remove hyphens
-# RE_BREAK = re.compile(r'(\w+)-([\n\f\r]+)(\w+)([%s]*)\s*' % punctuation,
-#                       re.MULTILINE | re.DOTALL)
-
-# hyphenated = set()
-
-
-# def unbreak(m):
-#     global hyphenated
-
-#     w00 = m.group(0)
-#     w0 = m.group(1) + '-' + m.group(2) + m.group(3)
-#     w1 = m.group(1) + '-' + m.group(3)
-#     w2 = m.group(1) + m.group(3)
-#     w1n = w1 + m.group(4) + '\n'
-#     w2n = w2 + m.group(4) + '\n'
-#     p0 = Pw(w0)
-#     p1 = Pw(w1)
-#     p2 = Pw(w1)
-#     if p1 < 1e-32 and p2 < 1e-34:
-#         p1a = Pw(m.group(1)) * Pw(m.group(3))
-#         if p1a > 1e-27:
-#             p1 = p1a
-#     probs = [(p, i) for i, p in enumerate([p0, p1, p2])]
-#     words = [w00, w1n, w2n]
-#     _, best = max(probs)
-
-#     # assert m.group(1) != 'indi' or words[best] == 'individual\n', '"%s" %s %s %s "%s"' % (
-#     #                        m.group(0), m.groups(), [p0, p1, p2],
-#     #                        best, words[best])
-
-#     if best != 2:
-#         hyphenated.add((w1, w2))
-#     return words[best]
-
-
-# def dehyphenate(text):
-#     """
-#         The businesses around newspapers, books, and mag-
-#         azines are changing on a daily basis; even still, global electronic com-
-#         munication over the Internet
-#      =>
-#         The businesses around newspapers, books, and magazines
-#         are changing on a daily basis; even still, global electronic communication
-#         over the Internet
-#     """
-#     assert isinstance(text, str), type(text)
-#     # print([type(x) for x in (text, RE_BREAK, unbreak)])
-#     unbroke = RE_BREAK.sub(unbreak, text)
-#     return unbroke
-
-
-def clean_file(path, path_cln, min_len=100):
-    """Clean up text file `path` and write the resulting text to `path_cln`
-        NOTE: This function also trims the text to length `MAX_DOC_SIZE`
-    """
-    assert path != path_cln
-    text = text0 = utils.read_file(path)
-
-    text = dehyphenate(text)
-
-    if MAX_DOC_SIZE > 0:
-        text = text[:MAX_DOC_SIZE]
-    if len(text) >= min_len:
-        print('-' * 80)
-        print(text[:200])
-        print('-' * 80)
-        utils.write_file(path_cln, text)
-        return True, len(text0), len(text)
-    return False, 0, 0
-
-
-def clean_text_corpus(text_dir, clean_dir):
-    """Clean up text files in `text_dir` and write the resulting text to `clean_dir`
-        NOTE: This function also trims the text to length `MAX_DOC_SIZE`
-    """
-    os.makedirs(clean_dir, exist_ok=True)
-    n = 0
-    for path in glob(os.path.join(text_dir, "*.txt")):
-        name = extract_name(path, whole=True)
-        name = RE_SPACE.sub('_', name)
-        assert ' ' not in name, name
-        path_cln = os.path.join(clean_dir, name)
-        ok, l0, ll = clean_file(path, path_cln)
-        if ok:
-            print('%3d: %-30s %4d->%4d' % (n, path_cln, l0, ll))
-            n += 1
-
-    print('-' * 80)
-    for i, (w1, w2) in enumerate(sorted(hyphenated)):
-        print('%4d: %-40s: %s' % (i, w1, w2))
-
-
 pdf_dir = '~/testdata'
-text_dir = '~/testdata.pages0'
-clean_dir = '~/testdata.pages0.clean'
+summary_dir = '~/testdata.pages0'
 pdf_dir = os.path.expanduser(pdf_dir)
-text_dir = os.path.expanduser(text_dir)
-clean_dir = os.path.expanduser(clean_dir)
+summary_dir = os.path.expanduser(summary_dir)
 print('pdf_dir=%s' % pdf_dir)
-print('text_dir=%s' % text_dir)
-print('clean_dir=%s' % clean_dir)
+print('summary_dir=%s' % summary_dir)
 
 
 if __name__ == '__main__':
-    corpus_to_text(pdf_dir, text_dir)
-    clean_text_corpus(text_dir, clean_dir)
+    corpus_to_text(pdf_dir, summary_dir)
