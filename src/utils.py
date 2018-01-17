@@ -43,7 +43,6 @@ def reverse_dictionary(dictionary):
     '''
     # print('type(dictionary): {0}'.format(type(dictionary)))
     if type(dictionary) is MyOrderedDict:
-        #print(type(dictionary))
         return MyOrderedDict([(v, k) for k, v in dictionary.items()])
     else:
         return {v: k for k, v in dictionary.items()}
@@ -51,9 +50,9 @@ def reverse_dictionary(dictionary):
 
 def merge_dictionaries(*dict_args):
     '''
-    http://stackoverflow.com/questions/38987/how-can-i-merge-two-python-dictionaries-in-a-single-expression
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
+        http://stackoverflow.com/questions/38987/how-can-i-merge-two-python-dictionaries-in-a-single-expression
+        Given any number of dicts, shallow copy and merge into a new dict,
+        precedence goes to key value pairs in latter dicts.
     '''
     result = {}
     for dictionary in dict_args:

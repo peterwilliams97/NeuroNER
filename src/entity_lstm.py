@@ -9,6 +9,14 @@ import pickle
 
 def bidirectional_LSTM(input, hidden_state_dimension, initializer, sequence_length=None,
                        output_sequence=True):
+    """
+        input: embedded_characters
+        hidden_state_dimension: parameters['character_lstm_hidden_state_dimension']
+        initializer: tf.contrib.layers.xavier_initializer()
+        sequence_length: self.input_token_lengths
+        output_sequence: True:  output is a sequence
+                         False: output is a number
+    """
 
     with tf.variable_scope("bidirectional_LSTM"):
         if sequence_length is None:
@@ -60,24 +68,34 @@ def bidirectional_LSTM(input, hidden_state_dimension, initializer, sequence_leng
 class EntityLSTM(object):
     """
         An LSTM architecture for named entity recognition.
-        Uses a character embedding layer followed by an LSTM to generate vector representation from
+        Uses a character embedding layer followed by an LSTM to generate a vector representation from
         characters for each token.
-        Then the character vector is concatenated with token embedding vector, which is input to
+        Then the character vector is concatenated with a token embedding vector, which is input to
         another LSTM followed by a CRF layer.
+
+        Input to LSTM is
+            self.input_token_indices              token table
+            self.input_token_character_indices
+            self.input_token_lengths
+        This allows us to find tokens in input text
     """
 
     def __init__(self, dataset, parameters):
 
         self.verbose = False
         # Placeholders for input, output and dropout
-        self.input_token_indices = tf.placeholder(tf.int32, [None], name="input_token_indices")
+        self.input_token_indices = tf.placeholder(tf.int32, [None],
+                                                  name="input_token_indices")
         self.input_label_indices_vector = tf.placeholder(tf.float32, [None, dataset.number_of_classes],
                                                          name="input_label_indices_vector")
-        self.input_label_indices_flat = tf.placeholder(tf.int32, [None], name="input_label_indices_flat")
+        self.input_label_indices_flat = tf.placeholder(tf.int32, [None],
+                                                       name="input_label_indices_flat")
         self.input_token_character_indices = tf.placeholder(tf.int32, [None, None],
                                                             name="input_token_character_indices")
-        self.input_token_lengths = tf.placeholder(tf.int32, [None], name="input_token_lengths")
-        self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
+        self.input_token_lengths = tf.placeholder(tf.int32, [None],
+                                                  name="input_token_lengths")
+        self.dropout_keep_prob = tf.placeholder(tf.float32,
+                                                name="dropout_keep_prob")
 
         # Internal parameters
         initializer = tf.contrib.layers.xavier_initializer()
@@ -154,11 +172,10 @@ class EntityLSTM(object):
 
         # Needed only if Bidirectional LSTM is used for token level
         with tf.variable_scope("feedforward_after_lstm") as vs:
-            W = tf.get_variable(
-                "W",
-                shape=[2 * parameters['token_lstm_hidden_state_dimension'],
-                       parameters['token_lstm_hidden_state_dimension']],
-                initializer=initializer)
+            W = tf.get_variable("W",
+                                shape=[2 * parameters['token_lstm_hidden_state_dimension'],
+                                       parameters['token_lstm_hidden_state_dimension']],
+                                initializer=initializer)
             b = tf.Variable(tf.constant(0.0, shape=[parameters['token_lstm_hidden_state_dimension']]), name="bias")
             outputs = tf.nn.xw_plus_b(token_lstm_output_squeezed, W, b, name="output_before_tanh")
             outputs = tf.nn.tanh(outputs, name="output_after_tanh")
@@ -167,10 +184,10 @@ class EntityLSTM(object):
             self.token_lstm_variables += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name)
 
         with tf.variable_scope("feedforward_before_crf") as vs:
-            W = tf.get_variable(
-                "W",
-                shape=[parameters['token_lstm_hidden_state_dimension'], dataset.number_of_classes],
-                initializer=initializer)
+            W = tf.get_variable("W",
+                                shape=[parameters['token_lstm_hidden_state_dimension'],
+                                       dataset.number_of_classes],
+                                initializer=initializer)
             b = tf.Variable(tf.constant(0.0, shape=[dataset.number_of_classes]), name="bias")
             scores = tf.nn.xw_plus_b(outputs, W, b, name="scores")
             self.unary_scores = scores
@@ -191,8 +208,9 @@ class EntityLSTM(object):
                                                                      [sequence_length, 1])], 1)
                 start_unary_scores = [[small_score] * dataset.number_of_classes + [large_score, small_score]]
                 end_unary_scores = [[small_score] * dataset.number_of_classes + [small_score, large_score]]
-                self.unary_scores = tf.concat([start_unary_scores, unary_scores_with_start_and_end, end_unary_scores],
-                                              0)
+                self.unary_scores = tf.concat([start_unary_scores,
+                                               unary_scores_with_start_and_end,
+                                               end_unary_scores], 0)
                 start_index = dataset.number_of_classes
                 end_index = dataset.number_of_classes + 1
                 input_label_indices_flat_with_start_and_end = tf.concat([tf.constant(start_index, shape=[1]),
@@ -230,7 +248,8 @@ class EntityLSTM(object):
             with tf.variable_scope("crf") as vs:
                 self.transition_parameters = tf.get_variable(
                     "transitions",
-                    shape=[dataset.number_of_classes + 2, dataset.number_of_classes + 2],
+                    shape=[dataset.number_of_classes + 2,
+                           dataset.number_of_classes + 2],
                     initializer=initializer)
                 utils_tf.variable_summaries(self.transition_parameters)
                 self.crf_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name)
@@ -238,7 +257,8 @@ class EntityLSTM(object):
             # Calculate mean cross-entropy loss
             with tf.variable_scope("loss"):
                 losses = tf.nn.softmax_cross_entropy_with_logits(logits=self.unary_scores,
-                                                                 labels=self.input_label_indices_vector, name='softmax')
+                                                                 labels=self.input_label_indices_vector,
+                                                                 name='softmax')
                 self.loss = tf.reduce_mean(losses, name='cross_entropy_mean_loss')
             with tf.variable_scope("accuracy"):
                 correct_predictions = tf.equal(self.predictions, tf.argmax(self.input_label_indices_vector, 1))
@@ -319,7 +339,7 @@ class EntityLSTM(object):
         sess.run(self.token_embedding_weights.assign(initial_weights))
 
     def load_embeddings_from_pretrained_model(self, sess, dataset, pretraining_dataset,
-            pretrained_embedding_weights, embedding_type='token'):
+        pretrained_embedding_weights, embedding_type='token'):
         if embedding_type == 'token':
             embedding_weights = self.token_embedding_weights
             index_to_string = dataset.index_to_token

@@ -15,7 +15,8 @@ Send a POST request::
     curl -d "foo=bar&bin=baz" http://localhost
 
 """
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, SimpleHTTPRequestHandler
+from socketserver import TCPServer
 from urllib.parse import unquote
 import os
 from glob import glob
@@ -45,26 +46,42 @@ def abridge(text, maxlen=200):
     return '%s<br>...<br>%s' % (text[:maxlen], text[-maxlen:])
 
 
-def markup(text_path, ann_path):
+def markup(text_path, ann_path, html_path):
+    """Markup text in file `text_path` with annotations in file `ann_path` as HTML and write to
+        file `html_path`
+    """
     text, ann = get_entities_from_brat(text_path, ann_path)
-    print('&' * 80)
-    print(len(ann))
-    for i, a in enumerate(ann[:5]):
-        s = text[a['start']:a['end']]
-        print('%3d: %10s %s %s' % (i, a['type'], a['text'], s))
+    # print('&' * 80)
+    print(len(ann), text_path, html_path)
+    if not ann:
+        return
+    # for i, a in enumerate(ann[:5]):
+    #     s = text[a['start']:a['end']]
+    #     # print('%3d: %10s %s %s' % (i, a['type'], a['text'], s))
     gaps = [text[a['end']:b['start']] for a, b in zip(ann[:-1], ann[1:])]
     gaps = [text[:ann[0]['start']]] + gaps + [text[ann[-1]['end']:]]
     gaps = [abridge(g) for g in gaps]
     words = ['<b>%s</b> [%s] ' % (a['text'], a['type']) for a in ann]
-    for i, (g, w) in enumerate(list(zip(gaps, words))[:5]):
-        print('%3d: "%s" -- "%s"' % (i, g, w))
-    print(text[:ann[5]['end']])
+    # for i, (g, w) in enumerate(list(zip(gaps, words))[:5]):
+    #     print('%3d: "%s" -- "%s"' % (i, g, w))
+    # print(text[:ann[5]['end']])
 
     gw = [g + w for g, w in zip(gaps, words)]
     gw.append(gaps[-1])
-    marked = '<html><body>%s</body></html>' % ''.join(gw)
+    body = '<body>%s</body>' % ''.join(gw)
+    marked = '<html>%s</html>' % body
 
-    write_file('blah.html', marked)
+    write_file(html_path, marked)
+
+
+def markup_dir(text_directory, html_directory):
+    assert os.path.abspath(text_directory) != os.path.abspath(html_directory), (text_directory, html_directory)
+    os.makedirs(html_directory, exist_ok=True)
+    for text_path in glob(os.path.join(text_directory, '*.txt')):
+        name = os.path.basename(text_path)
+        ann_path = '%s.ann' % os.path.splitext(text_path)[0]
+        html_path = os.path.join(html_directory, '%s.html' % os.path.splitext(name)[0])
+        markup(text_path, ann_path, html_path)
 
 
 def sort_texts(texts):
@@ -175,14 +192,36 @@ def predict_list(path_list, maxlen=None):
     # print(nn.stat s_graph_folder_)
 
 
-path_list = list(glob('/Users/pcadmin/testdata/*.pdf', recursive=True))
-print('all files=%d' % len(path_list))
-path_list.sort(key=lambda path: (-os.path.getsize(path), path))
-predict_list(path_list, maxlen=100 * 1000)
-assert False
-markup('/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.txt',
-       '/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.ann')
-assert False
+if False:
+    path_list = list(glob('/Users/pcadmin/testdata/*.pdf', recursive=True))
+    print('all files=%d' % len(path_list))
+    path_list.sort(key=lambda path: (-os.path.getsize(path), path))
+    predict_list(path_list, maxlen=100 * 1000)
+    assert False
+if False:
+    # markup('/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.txt',
+    #        '/Users/pcadmin/phi.output/phi_2017-10-13_17-20-11-176572/brat/deploy/text.ann')
+    markup_dir('/Users/pcadmin/phi.output/good_2017-10-17_09-48-14-196551/brat/deploy/',
+               '/Users/pcadmin/phi.http')
+    assert False
+if True:
+    cwd = os.getcwd()
+    print('^' * 80)
+    print('cwd=%s' % cwd)
+    try:
+        os.chdir('/Users/pcadmin/phi.http')
+        PORT = 8888
+        Handler = SimpleHTTPRequestHandler
+        # with TCPServer(("", PORT), Handler) as httpd:
+        httpd = TCPServer(("", PORT), Handler)
+        print("serving at port", PORT)
+        httpd.serve_forever()
+    except:
+        os.chdir(cwd)
+        print('`' * 80)
+        print('cwd=%s' % os.getcwd())
+        assert os.getcwd() == cwd
+
 
 # gets = '\n'.join(['<h%d>GET! %d</h%d>' % (i, i, i) for i in range(1, 7)])
 # print(gets)

@@ -2,7 +2,6 @@ import os
 import tensorflow as tf
 import numpy as np
 import sklearn.metrics
-from time import clock
 from evaluate import remap_labels
 import codecs
 import utils_nlp

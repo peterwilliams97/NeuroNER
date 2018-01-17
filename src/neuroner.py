@@ -135,7 +135,7 @@ class NeuroNER(object):
                 if parameters[name] != pretraining_parameters[name]:
                     print('WARNING: parameter {0} was overwritten from {1} to {2} to be '
                           'consistent with the pretrained model'.format(
-                        name, parameters[name], pretraining_parameters[name]))
+                           name, parameters[name], pretraining_parameters[name]))
                     parameters[name] = pretraining_parameters[name]
         if verbose:
             pprint(parameters)
@@ -250,48 +250,48 @@ class NeuroNER(object):
             parameters['gradient_clipping_value'] = abs(parameters['gradient_clipping_value'])
 
     def __init__(self,
-                 parameters_filepath=argument_default_value,
-                 pretrained_model_folder=argument_default_value,
-                 dataset_text_folder=argument_default_value,
-                 character_embedding_dimension=argument_default_value,
-                 character_lstm_hidden_state_dimension=argument_default_value,
-                 check_for_digits_replaced_with_zeros=argument_default_value,
-                 check_for_lowercase=argument_default_value,
-                 debug=argument_default_value,
-                 dropout_rate=argument_default_value,
-                 experiment_name=argument_default_value,
-                 freeze_token_embeddings=argument_default_value,
-                 gradient_clipping_value=argument_default_value,
-                 learning_rate=argument_default_value,
-                 load_only_pretrained_token_embeddings=argument_default_value,
-                 load_all_pretrained_token_embeddings=argument_default_value,
-                 main_evaluation_mode=argument_default_value,
-                 maximum_number_of_epochs=argument_default_value,
-                 number_of_cpu_threads=argument_default_value,
-                 number_of_gpus=argument_default_value,
-                 optimizer=argument_default_value,
-                 output_folder=argument_default_value,
-                 patience=argument_default_value,
-                 plot_format=argument_default_value,
-                 reload_character_embeddings=argument_default_value,
-                 reload_character_lstm=argument_default_value,
-                 reload_crf=argument_default_value,
-                 reload_feedforward=argument_default_value,
-                 reload_token_embeddings=argument_default_value,
-                 reload_token_lstm=argument_default_value,
-                 remap_unknown_tokens_to_unk=argument_default_value,
-                 spacylanguage=argument_default_value,
-                 tagging_format=argument_default_value,
-                 token_embedding_dimension=argument_default_value,
-                 token_lstm_hidden_state_dimension=argument_default_value,
-                 token_pretrained_embedding_filepath=argument_default_value,
-                 tokenizer=argument_default_value,
-                 train_model=argument_default_value,
-                 use_character_lstm=argument_default_value,
-                 use_crf=argument_default_value,
-                 use_pretrained_model=argument_default_value,
-                 verbose=argument_default_value,
-                 argument_default_value=argument_default_value):
+        parameters_filepath=argument_default_value,
+        pretrained_model_folder=argument_default_value,
+        dataset_text_folder=argument_default_value,
+        character_embedding_dimension=argument_default_value,
+        character_lstm_hidden_state_dimension=argument_default_value,
+        check_for_digits_replaced_with_zeros=argument_default_value,
+        check_for_lowercase=argument_default_value,
+        debug=argument_default_value,
+        dropout_rate=argument_default_value,
+        experiment_name=argument_default_value,
+        freeze_token_embeddings=argument_default_value,
+        gradient_clipping_value=argument_default_value,
+        learning_rate=argument_default_value,
+        load_only_pretrained_token_embeddings=argument_default_value,
+        load_all_pretrained_token_embeddings=argument_default_value,
+        main_evaluation_mode=argument_default_value,
+        maximum_number_of_epochs=argument_default_value,
+        number_of_cpu_threads=argument_default_value,
+        number_of_gpus=argument_default_value,
+        optimizer=argument_default_value,
+        output_folder=argument_default_value,
+        patience=argument_default_value,
+        plot_format=argument_default_value,
+        reload_character_embeddings=argument_default_value,
+        reload_character_lstm=argument_default_value,
+        reload_crf=argument_default_value,
+        reload_feedforward=argument_default_value,
+        reload_token_embeddings=argument_default_value,
+        reload_token_lstm=argument_default_value,
+        remap_unknown_tokens_to_unk=argument_default_value,
+        spacylanguage=argument_default_value,
+        tagging_format=argument_default_value,
+        token_embedding_dimension=argument_default_value,
+        token_lstm_hidden_state_dimension=argument_default_value,
+        token_pretrained_embedding_filepath=argument_default_value,
+        tokenizer=argument_default_value,
+        train_model=argument_default_value,
+        use_character_lstm=argument_default_value,
+        use_crf=argument_default_value,
+        use_pretrained_model=argument_default_value,
+        verbose=argument_default_value,
+        argument_default_value=argument_default_value):
 
         # Parse arguments
         arguments = {k: str(v) for k, v in locals().items() if k != 'self'}
@@ -330,7 +330,7 @@ class NeuroNER(object):
             if not parameters['use_pretrained_model']:
                 model.load_pretrained_token_embeddings(sess, dataset, parameters, token_to_vector)
                 self.transition_params_trained = np.random.rand(len(dataset.unique_labels) + 2,
-                    len(dataset.unique_labels) + 2)
+                                                                len(dataset.unique_labels) + 2)
             else:
                 print('@@@', len(dataset.token_to_index),
                     sorted(dataset.token_to_index, key=lambda x: (len(x), x))[:100])
@@ -370,7 +370,7 @@ class NeuroNER(object):
         results['model_options'] = copy.copy(parameters)
 
         self.stats_graph_folder_ = stats_graph_folder
-        assert False, stats_graph_folder
+        # assert False, stats_graph_folder
         model_folder = os.path.join(stats_graph_folder, 'model')
         utils.create_folder_if_not_exists(model_folder)
         with open(os.path.join(model_folder, 'parameters.ini'), 'w') as f:
@@ -438,7 +438,7 @@ class NeuroNER(object):
                         step += 1
                         if step % 10 == 0:
                             print('Training {0:.2f}% done'.format(step / len(sequence_numbers) * 100),
-                                end='\r', flush=True)
+                                  end='\r', flush=True)
 
                 epoch_elapsed_training_time = time.time() - epoch_start_time
                 print('Training completed in {0:.2f} seconds'.format(epoch_elapsed_training_time), flush=True)
@@ -469,7 +469,7 @@ class NeuroNER(object):
                     bad_counter = 0
                     previous_best_valid_f1_score = valid_f1_score
                     conll_to_brat.output_brat(output_filepaths, dataset_brat_folders, stats_graph_folder,
-                        overwrite=True)
+                                              overwrite=True)
                     self.transition_params_trained = transition_params_trained
                 else:
                     bad_counter += 1

@@ -146,6 +146,8 @@ def result_to_plot(folder_name=None):
     '''
         Loads results.json file in the ../stats_graphs/folder_name, and plot f1 vs epoch.
         Use for debugging purposes, or in case the program stopped due to error in plot_f1_vs_epoch.
+        !@#$
+        NOT USED
     '''
     stats_graph_folder = os.path.join('..', 'stats_graphs')
     if folder_name is None:

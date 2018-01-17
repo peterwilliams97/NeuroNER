@@ -127,17 +127,19 @@ def output_entities(brat_output_folder, previous_filename, entities, text_filepa
 def conll_to_brat(conll_input_filepath, conll_output_filepath, brat_original_folder,
     brat_output_folder, overwrite=False):
     '''
-    convert conll file in conll-filepath to brat annotations and output to brat_output_folder,
-    with reference to the existing text files in brat_original_folder
-    if brat_original_folder does not exist or contain any text file, then the text files are generated from conll files,
-    and conll file is updated with filenames and token offsets accordingly.
+        convert conll file in conll-filepath to brat annotations and output to brat_output_folder,
+        with reference to the existing text files in brat_original_folder
+        if brat_original_folder does not exist or contain any text file, then the text files are generated from
+        conll files, and conll file is updated with filenames and token offsets accordingly.
 
-    conll_input_filepath: path to conll file to convert to brat annotations
-    conll_output_filepath: path to output conll file with filename and offsets that are compatible with brat annotations
-    brat_original_folder: folder that contains the original .txt (and .ann) files that are formatted according to brat.
-                          .txt files are used to check if the token offsets match and generate the annotation from conll.
-    brat_output_folder: folder to output the text and brat annotations
-                        .txt files are copied from brat_original_folder to brat_output_folder
+        conll_input_filepath: path to conll file to convert to brat annotations
+        conll_output_filepath: path to output conll file with filename and offsets that are compatible with
+                               brat annotations
+        brat_original_folder: folder that contains the original .txt (and .ann) files that are formatted according
+                              to brat. .txt files are used to check if the token offsets match and generate the
+                              annotation from conll.
+        brat_output_folder: folder to output the text and brat annotations
+                            .txt files are copied from brat_original_folder to brat_output_folder
     '''
     verbose = False
     dataset_type = utils.get_basename_without_extension(conll_input_filepath)
