@@ -37,12 +37,21 @@ def count_same(page_texts, text):
     return len(page_texts)
 
 
-def find_empty_pages(path, min_len, max_len):
-    """Find the empty pages in the processed PDF file `path` (created by  make_page_corpus.py
-        )
-
+def find_no_text_pages(page_texts):
+    """Find the pages in the page text list `page_texts` (created by  make_page_corpus.py) that
+        contain no text
+        Returns: number of empty pages
     """
-    page_texts = get_page_texts(path)
+    empty_pages = [1 for text in page_texts if not text]
+    return len(empty_pages)
+
+
+def find_watermark_pages(page_texts, min_len, max_len):
+    """Find the pages in the page text list `page_texts` (created by  make_page_corpus.py) that
+        contain only a text watermark
+        where watermark lenght is between `min_len` and `max_len` characters inclusive.
+        Returns: number watermark only pages, number of pages in document, text of watermark
+    """
     page_texts.sort(key=lambda x: (len(x), x))
     page_texts = [text for text in page_texts if min_len <= len(text)]
     if len(page_texts) >= 2:
@@ -52,11 +61,20 @@ def find_empty_pages(path, min_len, max_len):
             if len(text) > max_len:
                 break
             if all(text in t for t in page_texts[i + 1:]):
-                return i, count_same(page_texts, text), len(page_texts), text
-    return -1, -1, -1, None
+                return count_same(page_texts, text), text
+    return 0, None
 
 
-def find_empty_pages_all(root, max_files):
+def find_empty_pages(path, min_len, max_len):
+    """Find the empty pages in the processed PDF file `path` (created by  make_page_corpus.py)
+    """
+    page_texts = get_page_texts(path)
+    n_empty = find_no_text_pages(page_texts)
+    n_watermark, text_watermark = find_watermark_pages(page_texts, min_len, max_len)
+    return len(page_texts), n_empty, n_watermark, text_watermark
+
+
+def find_empty_pages_corpus(root, max_files):
     """Analyze all the json files in directory `root` which are created by make_page_corpus.py
         Reutn
     """
@@ -66,10 +84,16 @@ def find_empty_pages_all(root, max_files):
     print('%d files' % len(path_list))
     empty_docs = []
     for path in path_list:
-        i, m, n, text = find_empty_pages(path, min_len=5, max_len=200)
-        if text:
-            empty_docs.append((base_name(path), i, m, n, text))
-            print(empty_docs[-1])
+        n_pages, n_empty, n_watermark, text_watermark = find_empty_pages(path, min_len=5, max_len=200)
+        if n_empty + n_watermark > 0:
+            empty_docs.append((base_name(path), n_pages, n_empty, n_watermark, text_watermark))
+    empty_docs.sort(key=lambda x: (-x[2] - x[3], -x[3], x[1], x[0]))
+    for name, n_pages, n_empty, n_watermark, text_watermark in empty_docs:
+        if text_watermark:
+            text_watermark = '"%s"' % text_watermark
+        else:
+            text_watermark = ''
+        print('%4d %4d %4d %-40s %s' % (n_pages, n_empty, n_watermark, name, text_watermark))
 
 
 def summarize_all(root, prefix_len, max_files):
@@ -145,5 +169,5 @@ print('text_dir=%s' % text_dir)
 
 if __name__ == '__main__':
     # summarize_all(text_dir, prefix_len=200, max_files=-1)
-    find_empty_pages_all(text_dir, max_files=-1)
+    find_empty_pages_corpus(text_dir, max_files=-1)
     # find_all_tags(text_dir, False)

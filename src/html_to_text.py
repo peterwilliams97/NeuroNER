@@ -2,21 +2,12 @@
     PDF to text conversion
 """
 import os
-# import re
 import json
 from bs4 import BeautifulSoup
 from clean import dehyphenate
 
-
+# summary=['n_chars', 'n_pages', 'name', 'page_lines', 'page_summaries', 'page_texts', 'pages', 'text']
 def update_summary(summary):
-    # summary = {
-    #     'name': pdf,
-    #     'n_pages': n_pages,
-    #     'n_chars': sum(len(page) for page in page_list),
-    #     'pages': page_list,
-    #     'text': text,
-    # }
-
     page_texts = []
     page_summaries = []
     page_lines = []
